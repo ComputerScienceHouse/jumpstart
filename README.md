@@ -12,16 +12,19 @@ This project uses [Python](http://nodejs.org), [Flask](https://npmjs.com), SQL, 
 2. Run `pip install -r requirements.txt` (or use docker)
 3. Ask opcomm for secrets
   - Google clients secret json
-  - Jumpstart API keys (runs without this... not entirely sure what it does)
+    - The secrets package follows the directory structure:
+    src/
+      secrets/
+        client_secrets.json
+  - Jumpstart API keys
 4. Run `flask --app jumpstart run` (please use docker)
 5. Results
 
 Jumpstart expects the following environment variables to be defined:
 ```
-JUMPSTART_API_KEYS=KEYS
+JUMPSTART_API_KEYS=KEYS # For authenticating slack bot
 TZ=TIMEZONE
-SENTRY_DSN=LINK
-GOOGLE_CLIENT_SECERTS_JSON=json from key file
+SENTRY_DSN=LINK # Don't need for local development
 ```
 ## Docker
 
@@ -33,12 +36,14 @@ docker run \
     -e TZ=America/New_York \
     -e SENTRY_DSN=LINK \
     -p 8080:8080 \
+    -v ./secrets:/usr/local/jumpstart/secrets \
     jumpstart
 ```
 3. You can also use a `.env` file:
 ```
 docker run \
-    --env-file='.env'
-    -p 8080:8080
+    --env-file='.env' \
+    -p 8080:8080 \
+    -v ./secrets:/usr/local/jumpstart/secrets \
     jumpstart
 ```
