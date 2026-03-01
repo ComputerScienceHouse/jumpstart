@@ -43,6 +43,7 @@ app = Flask(__name__)
 
 auth = HTTPTokenAuth(scheme='Token')
 api_keys = os.environ.get('JUMPSTART_API_KEYS')
+ddog_dashboard = os.environ.get('JUMPSTART_DDOG_DASHBOARD')
 
 tokens = api_keys.split(',') if api_keys else []
 
@@ -96,7 +97,7 @@ def ip_whitelist():
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html', ddog_dashboard=ddog_dashboard)
 
 @app.route('/calendar', methods=['GET'])
 @limiter.limit("3/minute")
