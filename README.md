@@ -1,6 +1,6 @@
 # Jumpstart, Electric Boogaloo
 
-![image](./docs/images/jumpstart.png)
+![image](./docs/images/jumpstart_transparant.png)
 
 ![Static Badge](https://img.shields.io/badge/%40gravy-made_by?style=flat-square&logo=github&labelColor=%230d1117&color=%23E11C52&link=https%3A%2F%2Fgithub.com%2FNikolaiStrong)
 
