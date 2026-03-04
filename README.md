@@ -2,7 +2,8 @@
 
 ![image](./docs/images/jumpstart.png)
 
-[![Art by @gravy](https://img.shields.io/badge/github-Art_by_@gravy-#E11C52?logo=github)]
+![Static Badge](https://img.shields.io/badge/%40gravy-made_by?style=flat-square&logo=github&labelColor=%230d1117&color=%23E11C52&link=https%3A%2F%2Fgithub.com%2FNikolaiStrong)
+
 
 A graphical interface that displays important information at the entrance of CSH.
 
