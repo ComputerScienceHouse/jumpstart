@@ -26,7 +26,7 @@ See it live [here](https://jumpstart.csh.rit.edu)!
 ```
 2. Run the newly built docker on port 8000
 ```
-    docker run -p 8080:80 myuser/myimage:1.0
+    docker run -p 8080:80 Jumpstart
 ```
 
 ## Alternatively, you can run the docker compose file as well
