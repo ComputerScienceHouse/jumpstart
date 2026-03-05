@@ -1,4 +1,7 @@
-# Jumpstart, Electric Boogaloo
+# TODO
+- Add a link the mkDocs we do
+
+# Jumpstart V2: Electric Boogaloo
 
 ![image](./docs/images/jumpstart_transparant.png)
 
@@ -6,17 +9,15 @@
 
 
 A graphical interface that displays important information at the entrance of CSH.
-
 This is a backend re-write of the previous jumpstart.
 
 See it live [here](https://jumpstart.csh.rit.edu)!
 
 ## Setup
 1. Make sure you have docker installed
-    (OPTIONAL): You can use docker compose as well!!
+>> (OPTIONAL): You can use docker compose as well!!
 2. Copy the .env.template file, rename it to .env and place it in the root folder
 3. Ask an RTP for jumpstart secrets, add them to the .env accordingly
-
 
 ## Run 
 1. Build the docker file
@@ -32,5 +33,4 @@ See it live [here](https://jumpstart.csh.rit.edu)!
 ```
     docker compose up
 ```
-
 
