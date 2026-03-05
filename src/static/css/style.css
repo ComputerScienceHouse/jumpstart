@@ -1,5 +1,5 @@
 body{
-    background-image: url(darkmode.png);
+    background-image: url('/static/img/darkmodeF.png');
 }
 
 .panel-primary{
