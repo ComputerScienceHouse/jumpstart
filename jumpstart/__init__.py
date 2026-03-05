@@ -42,10 +42,8 @@ sentry_sdk.init(
 app = Flask(__name__)
 
 auth = HTTPTokenAuth(scheme='Token')
-api_keys = os.environ.get('JUMPSTART_API_KEYS')
+api_key = os.environ.get('JUMPSTART_KEY')
 ddog_dashboard = os.environ.get('JUMPSTART_DDOG_DASHBOARD')
-
-tokens = api_keys.split(',') if api_keys else []
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
@@ -77,8 +75,8 @@ with app.app_context():
     db.session.commit()
 
 @auth.verify_token
-def verify_token(token):
-    if token in tokens:
+def verify_token(api_key):
+    if token == api_key:
         print("VERIFIED!!!")
         return True
     return False
