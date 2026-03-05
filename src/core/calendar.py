@@ -82,8 +82,6 @@ def get_future_events_ical() -> list:
     report_timing("FINISHED")
     return returned_events
 
-get_future_events_ical()
-
 '''def get_future_events_google():
     now = datetime.now()
     events_result = calendar_service.events().list(

@@ -11,6 +11,17 @@ This is a backend re-write of the previous jumpstart.
 
 See it live [here](https://jumpstart.csh.rit.edu)!
 
+## Setup
+
+1. Setup .env
+
+```bash
+cp .env.template .env
+```
+
+adjust .env config variables as needed.
+
+
 ## Install
 
 Uhhh
