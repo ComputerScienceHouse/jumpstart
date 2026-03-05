@@ -1,3 +1,12 @@
-CALENDAR_URL = "https://calendar.google.com/calendar/ical/rti648k5hv7j3ae3a3rum8potk%40group.calendar.google.com/public/basic.ics"
-CALENDAR_OUTLOOK_DAYS = 7 #The amount of days to go through
-CALENDAT_EVENT_MAXIMUM = 10 #The amount of events needed to be displayed
+import os
+from dotenv import load_dotenv
+
+
+load_dotenv()
+
+BASE_DIR: str = os.path.dirname(os.path.abspath(__file__))
+
+CALENDAR_URL: str | None = os.getenv("CALENDAR_URL", None)
+CALENDAR_OUTLOOK_DAYS: int = int(os.getenv("CALENDAR_OUTLOOK_DAYS", "7"))
+CALENDAR_EVENT_MAXIMUM: int = int(os.getenv("CALENDAR_EVENT_MAXIMUM", "10"))
+CALENDAR_TIMEZONE: str = os.getenv("CALENDAR_TIMEZONE", "America/New_York")

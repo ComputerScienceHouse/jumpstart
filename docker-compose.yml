@@ -6,4 +6,7 @@ services:
     container_name: Jumpstart
     ports:
       - "8000:8000"
-    
+    environment:
+      - CALENDAR_URL=${CALENDAR_URL}
+      - CALENDAR_OUTLOOK_DAYS=${CALENDAR_OUTLOOK_DAYS}
+      - CALENDAT_EVENT_MAXIMUM=${CALENDAT_EVENT_MAXIMUM}
