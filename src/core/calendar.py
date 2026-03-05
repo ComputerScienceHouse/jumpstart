@@ -11,7 +11,7 @@ from icalendar import Calendar
 from config import CALENDAR_URL
 from config import CALENDAR_OUTLOOK_DAYS
 from config import CALENDAT_EVENT_MAXIMUM
-
+from dateutil import parser as dateparser
 
 logger: Logger = getLogger(__name__)
 operation_start_time = time.perf_counter()
@@ -28,8 +28,37 @@ def format_events(events : list):
     """
     Formats a parsed list of events and returns the html implementation
     """
-    
-    return
+
+    final_events = "<br>"
+
+    if not events:
+        print('No upcoming events found.')
+
+    for event in events:
+        start = event['start'].get('dateTime', event['start'].get('date'))
+        fin_date = dateparser.parse(start)
+        try:
+            delta = fin_date - now
+        except:
+            d = datetime.utcnow()
+            delta = fin_date - d
+        d
+        formatted = format_timedelta(delta) if delta > timedelta(0) else "------"
+
+        final_events += (
+            """<div class='calendar-event-container-lvl2'><span class='calendar-text-date'> """
+            + formatted +
+            """ </span><br>"""
+        )
+        final_events += (
+            "<span class='calendar-text' id='calendar'>"+
+            ''.join(event['summary'])+
+            "</span></div>"
+        )
+        final_events += "<hr style='border: 1px #B0197E solid;'>"
+
+    event_list = {'data': final_events}
+    return jsonify(event_list)
 
 def get_future_events_ical() -> list:
     """
