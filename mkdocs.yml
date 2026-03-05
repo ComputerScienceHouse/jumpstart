@@ -1,7 +1,7 @@
 ---
 site_name: "JumpStart Docs"
 site_description: "Documentation for CSH Jumpstart System"
-theme: 
+theme:
   name: material
   palette:
     - scheme: default
@@ -37,11 +37,11 @@ use_directory_urls: false
 
 nav:
   - Home: index.md
-  - Getting Started:
+  - Getting Started: docs/getting-started/getting-started.md
   - Endpoints:
-      - v1: endpoints/v1.md
+      - v1: endpoints/endpoints.md
   - Scripts:
-      - Setup: 
+      - Setup: docs/getting-started/setup.md
 
 plugins:
   - search
