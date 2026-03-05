@@ -1,0 +1,13 @@
+exclude = [
+    "__pycache__",
+    ".container_volumes",
+    ".venv",
+]
+
+target-version = "py314"
+line-length = 88
+
+[format]
+quote-style = "double"
+indent-style = "tab"
+skip-magic-trailing-comma = false

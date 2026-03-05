@@ -1,0 +1,292 @@
+body{
+    background-image: url(darkmode.png);
+}
+
+.panel-primary{
+    background: #34495e;
+    border: 8px #34495e solid ;
+    border-radius: 10px;
+}
+
+#top-bar{
+    border: 5px #B0197E solid;
+    background-color: #34495e;
+}
+
+#timewidget-fake{
+    display: none;
+}
+
+.file-title{
+    color: #fcf6fa;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 28px;
+    border-left: 5px #B0197E solid;
+    float: right;
+    width: 29%;
+}
+
+.js-title{
+    color: #fcf6fa;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 30px;
+    border-left: 5px #B0197E solid;
+    float: right;
+}
+
+.timewidget{
+    width: 800px;
+    height: 53px;
+}
+
+.weatherwidget{
+    float: right;
+    width: 49%;
+    border: 8px #34495e solid;
+    border-radius: 10px;
+    background-color: #34495e;
+}
+
+.datadog{
+    margin-top: 20px;
+    overflow: auto;
+    border: 8px #34495e solid;
+    border-radius: 10px;
+    background-color: #34495e;
+    width: 760px;
+    height: 580px;
+    float: right;
+    margin-bottom: 3%;
+}
+
+.announcements{
+    float: left;
+    width: 50%;
+    padding-top: 22%;
+    padding-left: 1%;
+    min-height: 840px;
+    overflow: hidden;
+    word-wrap: break-word;
+}
+
+.announcements-text-header{
+    color: white;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 20px;
+    text-align: center;
+}
+
+.announcements-text-body{
+    color: black;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 18px;
+    text-align: center;
+}
+
+.shower-thoughts{
+    float: left;
+    width: 100%;
+    padding-left: 1%;
+}
+
+.shower-thoughts-text-header{
+    color: white;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 20px;
+    text-align: center;
+}
+
+.shower-thoughts-text-body{
+    color: black;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 18px;
+    text-align: center;
+}
+
+.calendar-frame-lvl1{
+    background-color: #fcf6fa;
+    border: 8px #34495e solid;
+    border-radius: 10px;
+    margin-top: 20px;
+    height: 950px;
+    max-height: 950px;
+    overflow: hidden;
+}
+
+.calendar-event-container-lvl2{
+    padding-right: 2%;
+    padding-left: 2%;
+}
+
+.calendar-text-date{
+    color: #4c4c4c;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 20px;
+    text-shadow: 2px 2px 3px rgb(176,25,126, 0.5);
+    text-align: center;
+}
+
+.calendar-text{
+    color: black;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 19px;
+}
+
+@media screen and (max-width: 1899px) {
+    .shower-thoughts{
+        width: 49%;
+        padding-top: 1%;
+    }
+    .datadog{
+        /*margin-top: 25%;*/
+        opacity: 0;
+        visibility: hidden;
+        display: none;
+    }
+    .js-title{
+        display: none;
+    }
+}
+
+@media screen and (max-width: 1329px) {
+    .announcements-text-header{
+        font-size: 16px;
+    }
+    .announcements-text-body{
+        font-size: 14px;
+    }
+    .file-title{
+        display: none;
+    }
+    #timewidget-fake{
+        display: inherit;
+    }
+    #timewidget-real{
+        display: none;
+    }
+}
+
+@media screen and (max-width: 979px) {
+    .announcements{
+        padding-top: 2%;
+        width: 100%;
+    }
+    .weatherwidget{
+/*        margin-top: 2%;
+*/        width: 100%;
+    }
+    .shower-thoughts{
+        width: 100%;
+        padding-top: 2%;
+    }
+    .calendar-frame-lvl1{
+        opacity: 0;
+        visibility: hidden;
+        display: none;
+    }
+}
+
+@media screen and (max-width: 1899px) and (min-width: 1700px) {
+    .announcements{
+        padding-top: 25%;
+    }
+    .announcements-text-header{
+        font-size: 22px;
+    }
+    .announcements-text-body{
+        font-size: 20px;
+    }
+    .weatherwidget{
+        margin-top: 25%;
+    }
+}
+
+@media screen and (max-width: 1699px) and (min-width: 1500px) {
+    .announcements{
+        padding-top: 30%;
+    }
+    .announcements-text-header{
+        font-size: 20px;
+    }
+    .announcements-text-body{
+        font-size: 18px;
+    }
+    .weatherwidget{
+        margin-top: 30%;
+    }
+}
+
+@media screen and (max-width: 1499px) and (min-width: 1330px) {
+    .announcements{
+        padding-top: 35%;
+    }
+    .announcements-text-header{
+        font-size: 18px;
+    }
+    .announcements-text-body{
+        font-size: 16px;
+    }
+    .weatherwidget{
+        margin-top: 35%;
+    }
+}
+
+@media screen and (max-width: 1329px) and (min-width: 1080px) {
+    .announcements{
+        padding-top: 40%;
+    }
+    .weatherwidget{
+        margin-top: 40%;
+    }
+}
+
+@media screen and (max-width: 1079px) and (min-width: 980px) {
+    .announcements{
+        padding-top: 43%;
+    }
+    .weatherwidget{
+        margin-top: 43%;
+    }
+}
+
+@media screen and (max-width: 979px) and (min-width: 880px) {
+    .announcements{
+        padding-top: 47%;
+    }
+}
+
+@media screen and (max-width: 879px) and (min-width: 780px) {
+    .announcements{
+        padding-top: 53%;
+    }
+}
+
+@media screen and (max-width: 779px) and (min-width: 680px) {
+    .announcements{
+        padding-top: 57%;
+    }
+}
+
+@media screen and (max-width: 679px) and (min-width: 580px) {
+    .announcements{
+        padding-top: 63%;
+    }
+}
+
+@media screen and (max-width: 579px) and (min-width: 480px) {
+    .announcements{
+        padding-top: 67%;
+    }
+}
+
+@media screen and (max-width: 479px) and (min-width: 380px) {
+    .announcements{
+        padding-top: 73%;
+    }
+}
+
+@media screen and (max-width: 379px) {
+    .announcements{
+        padding-top: 77%;
+    }
+}
