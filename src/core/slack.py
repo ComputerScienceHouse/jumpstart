@@ -1,3 +1,4 @@
+import re
 import json
 
 from logging import getLogger, Logger
@@ -12,7 +13,20 @@ logger: Logger = getLogger(__name__)
 
 client: AsyncWebClient = AsyncWebClient(token=SLACK_API_TOKEN)
 
-announcements: list[str] = []
+announcements: list[str] = ["Welcome to Jumpstart!"]
+
+
+def clean_text(raw: str) -> str:
+    """
+    Strip Slack mrkdwn, HTML entities, and formatting characters.
+
+    Args:
+        raw: The raw text to be cleaned.
+    """
+
+    text: str = re.sub(r"<[^>]+>", "", str(raw), flags=re.IGNORECASE)
+    text: str = re.sub(r"&lt;.*?&gt;", "", text, flags=re.IGNORECASE)
+    return text. replace("*", ""). replace("_", ""). replace("`", "").strip()
 
 
 async def gather_emojis() -> dict:
@@ -45,13 +59,11 @@ async def request_upload_via_dm(user_id: str, announcement_text: str) -> None:
         logger.error(f"Error messaging user {user_id}: {e}")
 
 
-def convert_user_response_to_bool(message: str) -> bool:
+def convert_user_response_to_bool(message_data: dict) -> bool:
 
     user_response: bool = False
 
     try:
-        message_data: dict = json.loads(message)
-
         user_response = message_data.get("actions", []).get(0, {}).get("action_id", "no_j") == "yes_j"
     except Exception as e:
         logger.error(f"Failed to parse data: {e}")
@@ -60,8 +72,18 @@ def convert_user_response_to_bool(message: str) -> bool:
 
 
 def get_announcement() -> str | None:
+    if len(announcements) == 0:
+        return None
+    
+    if len(announcements) == 1:
+        return announcements[0]
+
     return announcements.pop(0)
 
 
 def add_announcement(announcement_text: str) -> None:
+    if announcement_text is None or announcement_text.strip() == "":
+        logger.warning("Attempted to add empty announcement, skipping!")
+        return
+    
     announcements.append(announcement_text)

@@ -9,6 +9,7 @@ BASE_DIR: str = os.path.dirname(os.path.abspath(__file__))
 
 SLACK_API_TOKEN: str | None = os.getenv("SLACK_API_TOKEN", None)
 SLACK_JUMPSTART_MESSAGE: str = "Would you like to post this message to Jumpstart?"
+WATCHED_CHANNELS: tuple[str] = tuple(os.getenv("WATCHED_CHANNELS", "").split(","))
 SLACK_DM_TEMPLATE: dict | None = None
 
 CALENDAR_URL: str | None = os.getenv("CALENDAR_URL", None)

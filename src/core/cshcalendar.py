@@ -11,11 +11,16 @@ import requests
 import recurring_ical_events
 import arrow
 
-from src import config
+import config
 
 logger: Logger = getLogger(__name__)
 operation_start_time = time.perf_counter()
-calendar_service = build("calendar","v3",developerKey=config.CALENDAR_API_KEY)
+
+logger.info("Starting up the calendar service!")
+try:
+    calendar_service = build("calendar","v3",developerKey=config.CALENDAR_API_KEY)
+except:
+    logger.warning("Failed to build the calendar service, check your API key and internet connection!")
 
 # Automatically format all info into the class
 class CalendarInfo:
@@ -36,7 +41,7 @@ def report_timing(display_tag : str) -> None:
     """
     
     operation_timestamp = time.perf_counter() - operation_start_time
-    logger.info(operation_timestamp, "::", display_tag)
+    logger.info(f"{operation_timestamp}:: {display_tag}")
 
 def format_events(events : list[CalendarInfo]) -> dict:
     """
@@ -56,8 +61,8 @@ def format_events(events : list[CalendarInfo]) -> dict:
         print('No upcoming events found.')
 
     for event in events:
-        formatted = event.Date.humanize() if event.Date > current_date else "Happening Now!"
-        event.Date = formatted
+        formatted = event.date.humanize() if event.date > current_date else "Happening Now!"
+        event.date = formatted
         final_events += (
             """<div class='calendar-event-container-lvl2'><span class='calendar-text-date'> """
             + formatted +
@@ -65,7 +70,7 @@ def format_events(events : list[CalendarInfo]) -> dict:
         )
         final_events += (
             "<span class='calendar-text' id='calendar'>"+
-            ''.join(event.Name)+
+            ''.join(event.name)+
             "</span></div>"
         )
         final_events += "<hr style='border: 1px #B0197E solid;'>"
@@ -137,5 +142,5 @@ def get_future_events_ical() -> list[CalendarInfo]:
         logger.warning("Failed to fetch the Calendar! Failed with error:")
         logger.warning(e)
 
-    sorted_events = sorted(found_events, key=lambda x: x.Date)
+    sorted_events = sorted(found_events, key=lambda x: x.date)
     return sorted_events

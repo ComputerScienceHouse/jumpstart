@@ -1,6 +1,16 @@
+FROM ghcr.io/astral-sh/uv:python3.14-alpine AS docbuilder
+
+COPY . /jumpstartdocs
+WORKDIR /jumpstartdocs
+
+RUN uv pip install --no-cache-dir -r ./docs/requirements.txt --system && \
+    zensical build
+
 FROM ghcr.io/astral-sh/uv:python3.14-alpine
 
 COPY src /jumpstart
+COPY --from=docbuilder /jumpstartdocs/site /jumpstart/docs
+
 WORKDIR /jumpstart
 
 RUN addgroup -g 2000 jumpgroup && adduser -S -u 1001 -G jumpgroup jumpstart && \

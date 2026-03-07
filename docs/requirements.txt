@@ -1,4 +1,4 @@
-zensical==1.6.1
+zensical==0.0.24
 mkdocstrings
 mkdocstrings-python
 mkdocs-minify-plugin
