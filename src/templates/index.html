@@ -31,121 +31,26 @@
             <div class="weatherwidget mt-3">
                 <a class="weatherwidget-io" id="weather-image" href="https://forecast7.com/en/43d16n77d61/rochester/?unit=us" data-label_1="ROCHESTER" data-label_2="WEATHER" data-font="Fira Sans" data-icons="Climacons Animated" data-days="100" data-theme="kitty">ROCHESTER WEATHER</a>
             </div>
+            <div class="shower-thoughts">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        <b><span class="shower-thoughts-text-header">Shower Thoughts - /r/showerthoughts</span></b>
+                    </div>
+                    <div class="panel-body">
+                        <div class="plug-body">
+                            <b><span class="shower-thoughts-text-body" id="showerthoughts">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</span></b>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <script type="text/javascript">
-            function longUpdate(){
-                var date = new Date();
-
-                if (date.getMonth()+1 == 2 && (date.getDate() == 12 || date.getDate() == 13 || date.getDate() == 14) ) {
-                    $("body").css("background-image", "url(../static/css/valentinemode.png)");
-                } else if (date.getMonth()+1 == 3 && (date.getDate() == 13) ) {
-                    $("body").css("background-image", "url(../static/css/jumpstartbang.png)");
-                } else if (date.getMonth()+1 == 10 && (date.getDate() == 29 || date.getDate() == 30 || date.getDate() == 31) )  {
-                    $("body").css("background-image", "url(../static/css/spookymode.png)");
-                } else if(date.getMonth()+1 == 11 && date.getDate() == 2) {
-                    $("body").css("background-image", "url(../static/css/duckymode2.png)");
-                } else if(date.getMonth()+1 == 11 || date.getMonth()+1 == 12) {
-                    $("body").css("background-image", "url(../static/css/wintermode.png)");
-                } else if(9 < date.getHours() && date.getHours() < 18) {
-                    $("body").css("background-image", "url(../static/css/lightmodeF.png)");
-                } else {
-                    $("body").css("background-image", "url(../static/css/darkmodeF.png)");
-                }
-
-                fetch('/api/calendar', {
-                    method: 'GET',
-                    mode:'cors',
-                    dataType: 'json'
-                })
-                .then(r => r.json())
-                .then(r => {
-                    $("#calendar").html(r.data)
-                    if(9 < date.getHours() && date.getHours() < 18){
-                        $(".panel-body").css("background-color", "white");
-                        $(".plug-body").css("background-color", "white");
-                        $(".shower-thoughts-text-body").css("background-color", "white");
-                        $(".shower-thoughts-text-body").css("color", "black");
-                        $(".announcements-text-body").css("color", "black");
-                        $(".calendar-frame-lvl1").css("background-color", "white")
-                        $(".calendar-text-date").css("color", "black")
-                        $(".calendar-text").css("color", "black")
-
-                        $("#datadog").attr('src','{{ddog_dashboard}}' + new Date().getTime());
-                    }else{
-                        // $(".calendar-event-container-lvl2").css("background-color", "black");
-                        $(".panel-body").css("background-color", "black");
-                        $(".plug-body").css("background-color", "black");
-                        $(".shower-thoughts-text-body").css("background-color", "black");
-                        $(".shower-thoughts-text-body").css("color", "white");
-                        $(".announcements-text-body").css("color", "white");
-                        $(".calendar-frame-lvl1").css("background-color", "black")
-                        $(".calendar-text-date").css("color", "white")
-                        $(".calendar-text").css("color", "white")
-
-                        $("#datadog").attr('src','{{ddog_dashboard}}' + new Date().getTime());
-                    }
-                })
-                .catch(err => console.log(err))
-            }
-
-            function mediumUpdate(){
-                /*fetch('/api/showerthoughts', {
-                    method: 'GET',
-                    mode:'cors',
-                    dataType: 'json'
-                })
-                .then(r => r.json())
-                .then(r => {
-                    $("#showerthoughts").text(r.data)
-                })
-                .catch(err => console.log(err))*/
-
-                fetch('/api/announcement', {
-                    method: 'GET',
-                    mode:'cors',
-                    dataType: 'json'
-                })
-                .then(r => r.json())
-                .then(r => {
-                    $("#announcement").text(r.data.substring(0, 910))
-                })
-                .catch(err => console.log(err))
-            }
-
-            function shortUpdate(){
-                fetch('/api/harold', {
-                    method: 'GET',
-                    mode:'cors',
-                    dataType: 'json'
-                })
-                .then(r => r.json())
-                .then(r => {
-                    $("#harold-file-name").text(r.data)
-                })
-                .catch(err => console.log(err))
-            }
-
-            shortUpdate();
-            mediumUpdate();
-            longUpdate();
-
-            // Date background changes
-            setInterval(function(){
-                longUpdate();   
-            }, 360000);
-
-            // Calendar and shower thoughts refresh
-            setInterval(function(){
-                mediumUpdate();
-            }, 13000);
-
-            // Harold and announcement refresh
-            setInterval(function(){ 
-                shortUpdate();
-            }, 4000);
-
-            // Weather Widget refresh
-            setInterval('__weatherwidget_init()', 1800000)
-        </script>
-    </body>
-</html>
+        <div class="col-md-2">
+            <div class="calendar-frame-lvl1 float-right">
+                <b><div id="calendar"></div></b>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://weatherwidget.io/js/widget.min.js" integrity="sha384-z1SrZstAkfpo40+eVsXy73T2tzbGOviy6svjVLsoiZvGhs2mgIMzFdWh1YSuoH9D" crossorigin="anonymous"></script>
+<script src="{{ url_for('static', path='js/main.js') }}"></script>
+{% endblock %}

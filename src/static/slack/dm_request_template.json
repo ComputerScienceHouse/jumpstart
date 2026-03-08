@@ -1,0 +1,28 @@
+[
+    {
+        "type": "section",
+        "text": {
+            "type": "mrkdwn",
+            "text": "Would you like to post this message to Jumpstart?\n\n"
+        }
+    },
+    {
+        "type": "actions",
+        "elements": [
+            {
+                "type": "button",
+                "text": {"type": "plain_text", "text": "Yes"},
+                "style": "primary",
+                "action_id": "yes_j",
+                "value": null
+            },
+            {
+                "type": "button",
+                "text": {"type": "plain_text", "text": "No"},
+                "style": "danger",
+                "action_id": "no_j",
+                "value": "no"
+            }
+        ]
+    }
+]
