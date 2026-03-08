@@ -17,6 +17,7 @@ CALENDAR_OUTLOOK_DAYS: int = int(os.getenv("CALENDAR_OUTLOOK_DAYS", "7"))
 CALENDAR_EVENT_MAXIMUM: int = int(os.getenv("CALENDAR_EVENT_MAXIMUM", "10"))
 CALENDAR_TIMEZONE: str = os.getenv("CALENDAR_TIMEZONE", "America/New_York")
 CALENDAR_API_KEY: str = os.getenv("CALENDAR_API_KEY", None)
+CALENDAR_CACHE_REFRESH: int = int(os.getenv("CALENDAR_CACHE_REFRESH", "10"))
 
 if SLACK_API_TOKEN in (None, ""):
 	raise Exception("Missing SLACK_API_TOKEN")
