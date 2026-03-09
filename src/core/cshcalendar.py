@@ -72,7 +72,7 @@ def format_events(events: list[CalendarInfo]) -> dict:
         print("No upcoming events found.")
     else:
         for event in events:
-            formatted = ""
+            formatted : str = ""
             if event.date < current_date:
                 if event.location:
                     formatted = f"Happening in {event.location}"
@@ -80,6 +80,7 @@ def format_events(events: list[CalendarInfo]) -> dict:
                     formatted = "Happening Now!"
             else:
                 formatted = event.date.humanize()
+                formatted = formatted.title()
 
             final_events += (
             """<div class='calendar-event-container-lvl2'><span class='calendar-text-date'> """
