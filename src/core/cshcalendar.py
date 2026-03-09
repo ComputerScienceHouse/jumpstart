@@ -90,6 +90,16 @@ def format_events(events: list[CalendarInfo]) -> dict:
 
 	if not events:
 		final_events += "<hr style='border: 1px #B0197E solid;'>"
+		final_events += (
+			"""<div class='calendar-event-container-lvl2'><span class='calendar-text-date'> """
+			+ " "
+			+ """ </span><br>"""
+		)
+		final_events += (
+			"<span class='calendar-text' id='calendar'>"
+			+ "No Events on the Calendar!"
+			+ "</span></div>"
+		)
 		return {"data": final_events}
 
 	for event in events:
