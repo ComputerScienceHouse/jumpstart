@@ -24,8 +24,8 @@ def get_calendar() -> JSONResponse:
 		JSONResponse: A JSON response containing the calendar data.
 	"""
 
-	get_future_events_ical: tuple[cshcalendar.CalendarInfo] = (
-		asyncio.run(cshcalendar.get_future_events())
+	get_future_events_ical: tuple[cshcalendar.CalendarInfo] = asyncio.run(
+		cshcalendar.get_future_events()
 	)
 	formatted_events: dict = cshcalendar.format_events(get_future_events_ical)
 
