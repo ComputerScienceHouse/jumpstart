@@ -16,14 +16,10 @@ CALENDAR_URL: str | None = os.getenv("CALENDAR_URL", None)
 CALENDAR_OUTLOOK_DAYS: int = int(os.getenv("CALENDAR_OUTLOOK_DAYS", "7"))
 CALENDAR_EVENT_MAXIMUM: int = int(os.getenv("CALENDAR_EVENT_MAXIMUM", "10"))
 CALENDAR_TIMEZONE: str = os.getenv("CALENDAR_TIMEZONE", "America/New_York")
-CALENDAR_API_KEY: str = os.getenv("CALENDAR_API_KEY", None)
 CALENDAR_CACHE_REFRESH: int = int(os.getenv("CALENDAR_CACHE_REFRESH", "10"))
 
 if SLACK_API_TOKEN in (None, ""):
 	raise Exception("Missing SLACK_API_TOKEN")
-
-if CALENDAR_API_KEY in (None, "") and CALENDAR_URL in (None, ""):
-	raise Exception("Missing CALENDAR_API_KEY or CALENDAR_URL")
 
 with open(os.path.join(BASE_DIR, "static", "slack", "dm_request_template.json")) as f:
 	SLACK_DM_TEMPLATE = json.load(f)

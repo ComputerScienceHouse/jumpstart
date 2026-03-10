@@ -20,7 +20,9 @@ from config import BASE_DIR
 
 from api import endpoints
 from core.cshcalendar import close_cal_client
+
 logger: Logger = getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -30,7 +32,8 @@ async def lifespan(app: FastAPI):
 	await close_cal_client()
 	logger.info("Succesfully shut down the Jumpstart application!")
 
-app: FastAPI = FastAPI(docs_url="/swag",lifespan=lifespan)
+
+app: FastAPI = FastAPI(docs_url="/swag", lifespan=lifespan)
 
 logger.info("Mounting static files and templates!")
 app.mount(
