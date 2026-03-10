@@ -17,14 +17,20 @@ from config import (
 )
 import asyncio
 
-calendar_cache: tuple[CalendarInfo] = ()
-cal_last_update = None
-header_none_match = None
-header_last_modified = None
-cal_currently_rebuilding = False
+calendar_cache: tuple[CalendarInfo] = ()  # The current cache of the calendar
+cal_last_update: date = (
+	None  # The last time the calendar was fetched and updated the cache
+)
+header_none_match: str = (
+	None  # Used for the httpx.get to see if the current calendar matches
+)
+header_last_modified: str = (
+	None  # Used for the httpx.get to see when the calndar was last modified
+)
+cal_currently_rebuilding: bool = False  # Tells if the calendar is being rebuilt
 
 logger: Logger = getLogger(__name__)
-operation_start_time = time.perf_counter()
+operation_start_time: float = time.perf_counter()
 logger.info("Starting up the calendar service!")
 
 client = httpx.AsyncClient()
@@ -46,10 +52,10 @@ class CalendarInfo:
 	certain parts of the codebass
 	"""
 
-	def __init__(self, name: str, date_time: date, loc=None):
+	def __init__(self, name: str, date_time: date, location: str | None = None):
 		self.name: str = name
 		self.date: arrow.arrow = arrow.get(date_time)  # Arrow has way cooler stuff
-		self.location: str | None = loc
+		self.location: str | None = location
 
 	def __eq__(self, other):
 		if not isinstance(other, CalendarInfo):
@@ -74,7 +80,7 @@ def report_timing(display_tag: str) -> None:
 	logger.info(f"{operation_timestamp}:: {display_tag}")
 
 
-def format_events(events: list[CalendarInfo]) -> dict:
+def format_events(events: tuple[CalendarInfo]) -> dict:
 	"""
 	Formats a parsed list of CalendarInfos, and returns the HTML required for front end
 
@@ -86,7 +92,7 @@ def format_events(events: list[CalendarInfo]) -> dict:
 	"""
 
 	current_date: date = datetime.now(ZoneInfo(CALENDAR_TIMEZONE))
-	final_events = "<br>"
+	final_events: str = "<br>"
 
 	if not events:
 		final_events += "<hr style='border: 1px #B0197E solid;'>"
@@ -158,15 +164,13 @@ async def rebuild_calendar():
 				event.get("DTSTART").dt,
 				event.get("LOCATION"),
 			)
-			if not new_event in found_events:
-				found_events.add(new_event)
+			found_events.add(new_event)
 	except Exception as e:
 		logger.warning("Failed to rebuild calendar cache! Error:")
 		logger.warning(e)
 
 	cal_last_update = datetime.now()
-	sorted_events = sorted(found_events, key=lambda x: x.date)
-	calendar_cache = sorted_events
+	calendar_cache = sorted(found_events, key=lambda x: x.date)
 
 
 async def wait_for_rebuild():
@@ -251,7 +255,7 @@ async def get_future_events():
 		logger.warning(e)
 
 
-def closeClient():
+def close_client():
 	global client
 	client.aclose()
 
