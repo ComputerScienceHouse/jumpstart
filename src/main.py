@@ -14,15 +14,23 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse, HTMLResponse
 
+from contextlib import asynccontextmanager
+
 from config import BASE_DIR
 
 from api import endpoints
-
+from core.cshcalendar import close_cal_client
 logger: Logger = getLogger(__name__)
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+	logger.info("Starting up the Jumpstart application!")
+	yield
+	logger.info("Shutting down the Jumpstart application!")
+	await close_cal_client()
+	logger.info("Succesfully shut down the Jumpstart application!")
 
-logger.info("Starting up the Jumpstart application!")
-app: FastAPI = FastAPI(docs_url="/swag")
+app: FastAPI = FastAPI(docs_url="/swag",lifespan=lifespan)
 
 logger.info("Mounting static files and templates!")
 app.mount(

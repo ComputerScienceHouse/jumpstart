@@ -32,8 +32,7 @@ cal_currently_rebuilding: bool = False  # Tells if the calendar is being rebuilt
 logger: Logger = getLogger(__name__)
 operation_start_time: float = time.perf_counter()
 logger.info("Starting up the calendar service!")
-
-client = httpx.AsyncClient()
+cshcal_client = httpx.AsyncClient()
 
 """try:
 	calendar_service = build("calendar", "v3", developerKey=config.CALENDAR_API_KEY)
@@ -142,7 +141,7 @@ async def rebuild_calendar():
 
 	found_events: set[CalendarInfo] = set()
 	try:
-		response = await client.get(CALENDAR_URL, timeout=10)
+		response = await cshcal_client.get(CALENDAR_URL, timeout=10)
 		response.raise_for_status()
 		report_timing("Fetched the calendar from google")
 
@@ -223,7 +222,7 @@ async def get_future_events():
 		if header_last_modified:
 			headers["If-Modified-Since"] = header_last_modified
 
-		response = await client.get(CALENDAR_URL, timeout=10, headers=headers)
+		response = await cshcal_client.get(CALENDAR_URL, timeout=10, headers=headers)
 		response.raise_for_status()
 
 		if (  # Nothing changed status code
@@ -255,9 +254,13 @@ async def get_future_events():
 		logger.warning(e)
 
 
-def close_client():
-	global client
-	client.aclose()
+async def close_cal_client():
+    global cshcal_client
+    try:
+        await cshcal_client.aclose()
+    except RuntimeError as e:
+        logger.warning("EVENT LOOP HAS ALREADY CLOSED, FAILED TO CLOSE csh_cal")
+    return
 
 
 '''def get_future_events_ical() -> list[CalendarInfo]:
