@@ -1,10 +1,9 @@
 from logging import getLogger, Logger
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, time
 from zoneinfo import ZoneInfo
 
 # from icalendar import Calendar
 from icalendar.cal import Event, Calendar
-import time
 import httpx
 import recurring_ical_events
 import arrow
@@ -31,7 +30,6 @@ header_last_modified: str | None = (
 cal_currently_rebuilding: bool = False  # Tells if the calendar is being rebuilt
 
 logger: Logger = getLogger(__name__)
-operation_start_time: float = time.perf_counter()
 logger.info("Starting up the calendar service!")
 cshcal_client = httpx.AsyncClient()
 
@@ -45,30 +43,25 @@ class CalendarInfo:
 
 	def __init__(self, name: str, date_time: date, location: str | None = None):
 		self.name: str = name
+
+		if isinstance(date_time, date) and not isinstance(date_time, datetime):
+			date_time = arrow.combine(
+				date_time, time.min, tzinfo=ZoneInfo(CALENDAR_TIMEZONE)
+			)
+		elif not date_time.tzinfo:
+			date_time = date_time.replace(tzinfo=ZoneInfo(CALENDAR_TIMEZONE))
 		self.date: arrow.arrow = arrow.get(date_time)  # Arrow has way cooler stuff
 		self.location: str | None = location
 
 	def __eq__(self, other):
 		if not isinstance(other, CalendarInfo):
 			return False
-		return self.name == other.name
+		return (self.name == other.name) and (self.date == self.date)
 
 	def __hash__(self):
-		return hash(
-			self.name
+		return (
+			hash(self.name) + hash(self.date)
 		)  # Might be stupid only hashing off name, but as of right now I think the implementation works
-
-
-def report_timing(display_tag: str) -> None:
-	"""
-	Helper function to report how long an operation took since the lastly established operation start time.
-
-	Args:
-	    displayTag: The tag to be printed into the terminal.
-	"""
-
-	operation_timestamp = time.perf_counter() - operation_start_time
-	logger.info(f"{operation_timestamp}:: {display_tag}")
 
 
 def format_events(events: tuple[CalendarInfo]) -> dict[str, str]:
@@ -132,14 +125,12 @@ async def rebuild_calendar() -> None:
 
 	cal_currently_rebuilding = True
 
-	found_events: set[CalendarInfo] = set()
 	try:
+		found_events: set[CalendarInfo] = set()
 		response: httpx.Response = await cshcal_client.get(CALENDAR_URL, timeout=10)
 		response.raise_for_status()
-		report_timing("Fetched the calendar from google")
 
 		cal: Calendar = Calendar.from_ical(response.content)
-		report_timing("Converted the calendar info")
 
 		current_time: date = datetime.now(ZoneInfo(CALENDAR_TIMEZONE))
 
@@ -148,9 +139,6 @@ async def rebuild_calendar() -> None:
 		)
 
 		for event in fetched_daily_events:
-			if len(found_events) >= CALENDAR_EVENT_MAXIMUM:
-				break
-
 			new_event: CalendarInfo = CalendarInfo(
 				event.get("SUMMARY"),
 				event.get("DTSTART").dt,
@@ -162,7 +150,9 @@ async def rebuild_calendar() -> None:
 		logger.warning(e)
 
 	cal_last_update = current_time
-	calendar_cache = sorted(found_events, key=lambda x: x.date)
+	calendar_cache = sorted(found_events, key=lambda x: x.date)[
+		:CALENDAR_EVENT_MAXIMUM
+	]  # Only cache the first elements of this list
 	cal_currently_rebuilding = False
 
 
@@ -175,7 +165,7 @@ async def wait_for_rebuild() -> tuple[CalendarInfo]:
 	"""
 	global cal_currently_rebuilding
 	while cal_currently_rebuilding:
-		asyncio.sleep(1)
+		await asyncio.sleep(1)
 
 	return calendar_cache
 
@@ -198,12 +188,12 @@ async def get_future_events() -> tuple[CalendarInfo]:
 	if cal_currently_rebuilding:
 		return await wait_for_rebuild()
 
+	cur_time: date = datetime.now(ZoneInfo(CALENDAR_TIMEZONE))
 	cal_correct_length: bool = len(calendar_cache) == CALENDAR_EVENT_MAXIMUM
 	if (
 		cal_last_update
 		and cal_correct_length
-		and cal_last_update
-		> (datetime.now() - timedelta(minutes=CALENDAR_CACHE_REFRESH))
+		and (cal_last_update > (cur_time - timedelta(minutes=CALENDAR_CACHE_REFRESH)))
 	):
 		logger.info("Pulling from CSH calendar cache!")
 		return calendar_cache
@@ -211,6 +201,7 @@ async def get_future_events() -> tuple[CalendarInfo]:
 	logger.info("Checking to rebuild CSH Calendar...")
 	try:
 		headers: dict[str, str | None] = {}
+
 		if header_none_match:
 			headers["If-None-Match"] = header_none_match
 		if header_last_modified:
@@ -225,7 +216,7 @@ async def get_future_events() -> tuple[CalendarInfo]:
 			response.status_code == 304 and cal_correct_length
 		):
 			logger.info("CSH calendar not updated, refreshing last update!")
-			cal_last_update = datetime.now()
+			cal_last_update = cur_time
 			return calendar_cache
 
 		header_none_match = response.headers.get("ETag")
