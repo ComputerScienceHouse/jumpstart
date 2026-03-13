@@ -2,9 +2,10 @@ import httpx
 import asyncio
 from datetime import datetime, timedelta
 from itertools import islice
-from config import WIKIBOT_PASSWORD, WIKIBOT_USER, WIKI_CATEGORY,WIKI_API
+from config import WIKIBOT_PASSWORD, WIKIBOT_USER, WIKI_CATEGORY, WIKI_API
 import logging
 import random
+import re
 
 logging.basicConfig(level=logging.INFO)
 
@@ -27,6 +28,28 @@ last_modifed: str | None = None
 
 queued_pages: list[str] = []
 shown_pages: list[str] = []
+
+
+def clean_wikitext(text: str) -> str:
+	"""
+	Function for cleaning markdown text to be displayed
+	"""
+	# [[Page|Text]] → Text
+	text = re.sub(r"\[\[[^\|\]]*\|([^\]]+)\]\]", r"\1", text)
+
+	# [[Page]] → Page
+	text = re.sub(r"\[\[([^\]]+)\]\]", r"\1", text)
+
+	# Remove templates {{...}}
+	text = re.sub(r"\{\{.*?\}\}", "", text, flags=re.DOTALL)
+
+	# Remove bold/italic markup
+	text = re.sub(r"''+", "", text)
+
+	# Remove HTML tags
+	text = re.sub(r"<.*?>", "", text)
+
+	return text.strip()
 
 
 def batch_iterable(iterable: list, size: int):
@@ -99,7 +122,7 @@ async def refresh_category_pages():
 	if not bot_authenticated:
 		logger.warning("Bot is not authenticated, cancelling fetch of category pages")
 		return
-	
+
 	time_now: datetime = datetime.now()
 	if (
 		len(page_title_cache) > 0
@@ -127,7 +150,9 @@ async def refresh_category_pages():
 				headers["If-Modified-Since"] = last_modifed
 		else:
 			headers = {}
-		response: httpx.Response = await client.get(WIKI_API, params=params, headers=headers)
+		response: httpx.Response = await client.get(
+			WIKI_API, params=params, headers=headers
+		)
 
 		if response.status_code == 304:
 			last_updated_time = time_now
@@ -181,10 +206,11 @@ async def refresh_page_dictionary():
 	for batch in batch_iterable(page_title_cache, BATCH_SIZE):
 		params = {
 			"action": "query",
-			"prop": "extracts",
+			"prop": "revisions",
+			"rvprop": "content",
+			"rvslots": "main",
 			"titles": "|".join(batch),
-			"explaintext": 1,
-			"exintro": 1,
+			"explaintext": True,
 			"format": "json",
 		}
 		tasks.append(client.get(WIKI_API, params=params, timeout=10))
@@ -194,9 +220,13 @@ async def refresh_page_dictionary():
 	for r in responses:
 		r_json = r.json()
 		for page in r_json["query"]["pages"].values():
+			wikitext = page["revisions"][0]["slots"]["main"]["*"]
 
+			cleaned_text = clean_wikitext(wikitext)  # unfuck the text
+
+			paragraphs = cleaned_text.split("\n\n")  # Cut the first line
 			first_paragraph = (
-				page.get("extract","").strip()
+				paragraphs[0].strip() if paragraphs else ""
 			)  # Incase nick messes up?
 
 			results[page["title"]] = first_paragraph
@@ -205,12 +235,13 @@ async def refresh_page_dictionary():
 
 
 def reset_queues():
-	global queued_pages,shown_pages
+	global queued_pages, shown_pages
 	"""
 	Swaps Queued and Shown pages que
 	"""
 	queued_pages = shown_pages
 	shown_pages = []
+
 
 async def get_next_display():
 	"""
@@ -223,7 +254,7 @@ async def get_next_display():
 	global queued_pages, shown_pages
 	await refresh_category_pages()
 
-	que_empty:bool = len(queued_pages) == 0
+	que_empty: bool = len(queued_pages) == 0
 	if que_empty and len(shown_pages) == 0:
 		logger.warning("ERROR?!?")
 		return {"page": "ERROR GETTING PAGE", "content": "ERROR FETCHING CONTENT"}
