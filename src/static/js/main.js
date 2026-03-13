@@ -29,7 +29,7 @@ async function longUpdate() {
         const isDay = hour > 9 && hour < 18;
         const panelBody = $(".panel-body");
         const plugBody = $(".plug-body");
-        const showerBody = $(".shower-thoughts-text-body");
+        const wikiPages = $(".wikithoughts-text-body");
         const announcementsBody = $(".announcements-text-body");
         const calendarFrame = $(".calendar-frame-lvl1");
         const calendarTextDate = $(".calendar-text-date");
@@ -38,7 +38,7 @@ async function longUpdate() {
         if (isDay) {
             panelBody.css("background-color", "white");
             plugBody.css("background-color", "white");
-            showerBody.css({ "background-color": "white", "color": "black" });
+            wikiPages.css({ "background-color": "white", "color": "black" });
             announcementsBody.css("color", "black");
             calendarFrame.css("background-color", "white");
             calendarTextDate.css("color", "black");
@@ -46,7 +46,7 @@ async function longUpdate() {
         } else {
             panelBody.css("background-color", "black");
             plugBody.css("background-color", "black");
-            showerBody.css({ "background-color": "black", "color": "white" });
+            wikiPages.css({ "background-color": "black", "color": "white" });
             announcementsBody.css("color", "white");
             calendarFrame.css("background-color", "black");
             calendarTextDate.css("color", "white");
@@ -62,13 +62,14 @@ async function longUpdate() {
 
 async function mediumUpdate() {
     try {
-        const [showerRes, announcementRes] = await Promise.all([
-            fetch('/api/showerthoughts', { method: 'GET', mode: 'cors' }),
+        const [wikiRes, announcementRes] = await Promise.all([
+            fetch('/api/wikithought', { method: 'GET', mode: 'cors' }),
             fetch('/api/announcement', { method: 'GET', mode: 'cors' })
         ]);
-        const showerData = await showerRes.json();
+        const wikiData = await wikiRes.json();
         const announcementData = await announcementRes.json();
-        $("#showerthoughts").text(showerData.data);
+        $("#wikipageheader").text("csh/Wikithoughts - " + wikiData.page)
+        $("#wikipagetext").text(wikiData.content);
         $("#announcement").text(announcementData.data.substring(0, 910));
     } catch (err) {
         console.log(err);

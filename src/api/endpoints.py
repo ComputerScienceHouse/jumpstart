@@ -9,7 +9,7 @@ import asyncio
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import JSONResponse
 
-from core import slack, cshcalendar
+from core import slack, cshcalendar, wikithoughts
 
 logger: Logger = getLogger(__name__)
 router: APIRouter = APIRouter()
@@ -127,6 +127,12 @@ async def message_actions(payload: str = Form(...)) -> JSONResponse:
 		return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
 	return JSONResponse({"status": "success"}, status_code=200)
+
+
+@router.get("/wikithought")
+async def wikithought() -> JSONResponse:
+	returned_page_data: dict[str, str] = await wikithoughts.get_next_display()
+	return JSONResponse(returned_page_data)
 
 
 @router.get("/showerthoughts")

@@ -45,23 +45,21 @@ class CalendarInfo:
 		self.name: str = name
 
 		if isinstance(date_time, date) and not isinstance(date_time, datetime):
-			date_time = arrow.combine(
+			date_time = date_time.combine(
 				date_time, time.min, tzinfo=ZoneInfo(CALENDAR_TIMEZONE)
 			)
 		elif not date_time.tzinfo:
-			date_time = date_time.replace(tzinfo=ZoneInfo(CALENDAR_TIMEZONE))
+			date_time = date_time.astimezone(tzinfo=ZoneInfo(CALENDAR_TIMEZONE))
 		self.date: arrow.arrow = arrow.get(date_time)  # Arrow has way cooler stuff
 		self.location: str | None = location
 
 	def __eq__(self, other):
 		if not isinstance(other, CalendarInfo):
 			return False
-		return (self.name == other.name) and (self.date == self.date)
+		return (self.name == other.name) and (self.date == other.date)
 
 	def __hash__(self):
-		return (
-			hash(self.name) + hash(self.date)
-		)  # Might be stupid only hashing off name, but as of right now I think the implementation works
+		return hash((self.name, self.date))
 
 
 def format_events(events: tuple[CalendarInfo]) -> dict[str, str]:
@@ -123,8 +121,6 @@ async def rebuild_calendar() -> None:
 	"""
 	global calendar_cache, cal_last_update, cal_currently_rebuilding
 
-	cal_currently_rebuilding = True
-
 	try:
 		found_events: set[CalendarInfo] = set()
 		response: httpx.Response = await cshcal_client.get(CALENDAR_URL, timeout=10)
@@ -132,19 +128,36 @@ async def rebuild_calendar() -> None:
 
 		cal: Calendar = Calendar.from_ical(response.content)
 
-		current_time: date = datetime.now(ZoneInfo(CALENDAR_TIMEZONE))
+		current_time: datetime = datetime.now(ZoneInfo(CALENDAR_TIMEZONE))
 
 		fetched_daily_events: list[Event] = recurring_ical_events.of(cal).between(
 			current_time, current_time + timedelta(days=CALENDAR_OUTLOOK_DAYS)
 		)
 
 		for event in fetched_daily_events:
+			dt = event.get("DTSTART").dt
+
+			if isinstance(dt, date) and not isinstance(dt, datetime):
+				dt = datetime.combine(dt, time.min, tzinfo=ZoneInfo(CALENDAR_TIMEZONE))
+
+			elif dt.tzinfo is None:
+				dt = dt.replace(tzinfo=ZoneInfo(CALENDAR_TIMEZONE))
+
+			else:
+				dt = dt.astimezone(ZoneInfo(CALENDAR_TIMEZONE))
+
 			new_event: CalendarInfo = CalendarInfo(
 				event.get("SUMMARY"),
-				event.get("DTSTART").dt,
+				dt,
 				event.get("LOCATION"),
 			)
+
+			before = len(found_events)
 			found_events.add(new_event)
+			after = len(found_events)
+
+			if before == after:
+				print("Duplicate detected:", new_event.name, new_event.date)
 	except Exception as e:
 		logger.warning("Failed to rebuild calendar cache! Error:")
 		logger.warning(e)
@@ -198,6 +211,7 @@ async def get_future_events() -> tuple[CalendarInfo]:
 		logger.info("Pulling from CSH calendar cache!")
 		return calendar_cache
 
+	cal_currently_rebuilding = True
 	logger.info("Checking to rebuild CSH Calendar...")
 	try:
 		headers: dict[str, str | None] = {}
@@ -222,9 +236,6 @@ async def get_future_events() -> tuple[CalendarInfo]:
 		header_none_match = response.headers.get("ETag")
 		header_last_modified = response.headers.get("Last-Modified")
 
-		if cal_currently_rebuilding:
-			return await wait_for_rebuild()
-
 		if cal_correct_length:
 			logger.info("Calendar cache is full length, rebuilding async!")
 			asyncio.create_task(
@@ -233,6 +244,7 @@ async def get_future_events() -> tuple[CalendarInfo]:
 		else:
 			logger.info("Calendar cache is NOT full length, yielding rebuild!")
 			await rebuild_calendar()
+
 		return calendar_cache
 	except Exception as e:
 		logger.warning("Failed to fetch the Calendar!")

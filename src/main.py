@@ -19,7 +19,7 @@ from contextlib import asynccontextmanager
 from config import BASE_DIR
 
 from api import endpoints
-from core import cshcalendar
+from core import cshcalendar, wikithoughts
 
 logger: Logger = getLogger(__name__)
 
@@ -27,6 +27,8 @@ logger: Logger = getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 	logger.info("Starting up the Jumpstart application!")
+
+	await wikithoughts.auth_bot()
 	yield
 	logger.info("Shutting down the Jumpstart application!")
 	await cshcalendar.close_cal_client()
