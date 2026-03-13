@@ -4,6 +4,7 @@ import json
 import httpx
 import random
 import textwrap
+import asyncio
 
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import JSONResponse
@@ -23,8 +24,8 @@ def get_calendar() -> JSONResponse:
 		JSONResponse: A JSON response containing the calendar data.
 	"""
 
-	get_future_events_ical: list[cshcalendar.CalendarInfo] = (
-		cshcalendar.get_future_events_ical()
+	get_future_events_ical: tuple[cshcalendar.CalendarInfo] = asyncio.run(
+		cshcalendar.get_future_events()
 	)
 	formatted_events: dict = cshcalendar.format_events(get_future_events_ical)
 
