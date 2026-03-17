@@ -27,7 +27,8 @@ header_none_match: str | None = (
 header_last_modified: str | None = (
 	None  # Used for the httpx.get to see when the calndar was last modified
 )
-cal_currently_rebuilding: bool = False  # Tells if the calendar is being rebuilt
+cal_constructed_event: asyncio.Event = asyncio.Event()
+cal_constructed_event.clear()
 
 logger: Logger = getLogger(__name__)
 logger.info("Starting up the calendar service!")
@@ -127,9 +128,9 @@ async def rebuild_calendar() -> None:
 	"""
 	Fetches and rebuilds the global calendar cache. This does NOT return a new cache, but changes the global calendar cache
 	"""
-	global calendar_cache, cal_last_update, cal_currently_rebuilding
+	global calendar_cache, cal_last_update, cal_constructed_event
 	try:
-		cal_currently_rebuilding = True
+		cal_constructed_event.clear()
 		found_events: set[CalendarInfo] = set()
 		response: httpx.Response = await cshcal_client.get(CALENDAR_URL, timeout=10)
 		response.raise_for_status()
@@ -160,41 +161,23 @@ async def rebuild_calendar() -> None:
 				event.get("LOCATION"),
 			)
 
-			before = len(found_events)
 			found_events.add(new_event)
-			after = len(found_events)
 
-			if before == after:
-				print("Duplicate detected:", new_event.name, new_event.date)
+		cal = None
+		fetched_daily_events = None
 	except Exception as e:
 		logger.warning("Failed to rebuild calendar cache! Error:")
 		logger.warning(e)
-		cal_currently_rebuilding = False
+		cal_constructed_event.set()
 
 	cal_last_update = current_time
 	calendar_cache = sorted(found_events, key=lambda x: x.date)[
 		:CALENDAR_EVENT_MAXIMUM
 	]  # Only cache the first elements of this list
-	cal_currently_rebuilding = False
+	cal_constructed_event.set()
 
 
-async def wait_for_rebuild() -> tuple[CalendarInfo]:
-	"""
-	Simple yielding function for waiting to return the freshly made calendar cache, rather than proceeding with the obtain
-
-	Returns:
-		list: A list of CalendarInfo objects
-	"""
-	global cal_currently_rebuilding
-	while cal_currently_rebuilding:
-		logger.warning(cal_currently_rebuilding)
-		logger.warning("PAUSING FOR A REBUILD!")
-		await asyncio.sleep(1)
-
-	return calendar_cache
-
-
-async def get_future_events() -> tuple[CalendarInfo]:
+async def get_future_events() -> list[CalendarInfo]:
 	"""
 	Returns the first events up to event maximum within the the calendar outlook day amount
 	custom object has name, date and the location
@@ -208,13 +191,15 @@ async def get_future_events() -> tuple[CalendarInfo]:
 		cal_last_update, \
 		header_last_modified, \
 		header_none_match, \
-		cal_currently_rebuilding
+		cal_constructed_event
 
-	if cal_currently_rebuilding:
-		return await wait_for_rebuild()
+	if not cal_constructed_event.is_set():
+		await cal_constructed_event.wait()
+		return calendar_cache
 
 	cur_time: date = datetime.now(ZoneInfo(CALENDAR_TIMEZONE))
 	cal_correct_length: bool = len(calendar_cache) == CALENDAR_EVENT_MAXIMUM
+
 	if (
 		cal_last_update
 		and cal_correct_length
@@ -247,15 +232,18 @@ async def get_future_events() -> tuple[CalendarInfo]:
 		header_none_match = response.headers.get("ETag")
 		header_last_modified = response.headers.get("Last-Modified")
 
-		if cal_currently_rebuilding:
-			await rebuild_calendar()
+		if (
+			not cal_constructed_event.is_set()
+		):  # Double check, since it might have changed for the last modifed
+			await cal_constructed_event.wait()
 			return calendar_cache
 
 		if cal_correct_length:
 			logger.info("Calendar cache is full length, rebuilding async!")
-			asyncio.create_task(
+			running_task = asyncio.create_task(
 				rebuild_calendar()
 			)  # Calendar is correct length, we can just run this in the background
+			# Make it a variable for GC purposes? idk sonarqube told me to do it
 		else:
 			logger.info("Calendar cache is NOT full length, yielding rebuild!")
 			await rebuild_calendar()

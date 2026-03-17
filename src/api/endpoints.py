@@ -24,7 +24,6 @@ async def get_calendar() -> JSONResponse:
 		JSONResponse: A JSON response containing the calendar data.
 	"""
 
-	logger.warning("UPDATING CALENDAR")
 	get_future_events_ical: tuple[
 		cshcalendar.CalendarInfo
 	] = await cshcalendar.get_future_events()

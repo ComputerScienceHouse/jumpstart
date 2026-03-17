@@ -7,8 +7,6 @@ import logging
 import random
 import re
 
-logging.basicConfig(level=logging.INFO)
-
 CYCLE_DEBOUNCE_TIME = 12  # How long it takes to resfresh wiki titles
 BATCH_SIZE: int = 50  # max titles per request
 
@@ -97,8 +95,8 @@ async def auth_bot() -> None:
 	)
 	token_req.raise_for_status()
 
-	login_token: httpx.Response = token_req.json()["query"]["tokens"]["logintoken"]
-	login_req = await client.post(
+	login_token: dict = token_req.json()["query"]["tokens"]["logintoken"]
+	login_req: httpx.Response = await client.post(
 		WIKI_API,
 		data={
 			"action": "login",
@@ -159,7 +157,7 @@ async def refresh_category_pages() -> list[str]:
 		"format": "json",
 	}
 
-	headers = {}
+	headers: dict[str, str] = {}
 	# This needs to loop due to mediawiki limitations
 	while True:
 		if not "cmcontinue" in params:
@@ -204,15 +202,9 @@ async def refresh_category_pages() -> list[str]:
 	return page_title_cache
 
 
-async def refresh_page_dictionary():
+async def refresh_page_dictionary() -> None:
 	"""
-	Function for fetching the first "Sentence" of each title
-
-	Args:
-	    titles (list[str]): Each title of the page to search through
-
-	Returns:
-	    dict {title: str}: The title of each page, along with its corresponding sentence/first paragraph
+	Fetches the pages based off the cace of page titles, and updates the page cache accordingly
 
 	"""
 	global page_dict_cache, page_title_cache
@@ -253,7 +245,7 @@ async def refresh_page_dictionary():
 	page_dict_cache = results
 
 
-def reset_queues():
+def reset_queues() -> None:
 	"""
 	Swaps Queued and Shown pages que
 	"""
@@ -267,7 +259,7 @@ def reset_queues():
 	shown_pages = []
 
 
-async def get_next_display():
+async def get_next_display() -> dict[str, str]:
 	"""
 	Returns the next wiki page to be displayed in JSON Form, with the keys "page" as the title of the page
 	and "content" as the first paragraph on the page
