@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI):
 	yield
 	logger.info("Shutting down the Jumpstart application!")
 	await cshcalendar.close_client()
-	
+
 	logger.info("Succesfully shut down the Jumpstart application!")
 
 

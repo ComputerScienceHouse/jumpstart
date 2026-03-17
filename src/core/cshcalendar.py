@@ -17,7 +17,7 @@ from config import (
 )
 import asyncio
 
-calendar_cache: list[CalendarInfo] = [] # The current cache of the calendar
+calendar_cache: list[CalendarInfo] = []  # The current cache of the calendar
 cal_last_update: date | None = (
 	None  # The last time the calendar was fetched and updated the cache
 )
@@ -69,21 +69,20 @@ def calendar_to_html(seg_header: str, seg_content: str) -> str:
 	Args:
 		seg_header (str): The header of the calendar segment
 		seg_content (str): The content in the calendar segment
-	
+
 	Returns:
 		str:
 	"""
 	ret_string: str = (
-			"""<div class='calendar-event-container-lvl2'><span class='calendar-text-date'> """
-			+ seg_header
-			+ """ </span><br>"""
-		)
+		"""<div class='calendar-event-container-lvl2'><span class='calendar-text-date'> """
+		+ seg_header
+		+ """ </span><br>"""
+	)
 	ret_string += (
-			"<span class='calendar-text' id='calendar'>"
-			+ seg_content
-			+ "</span></div>"
-		)
+		"<span class='calendar-text' id='calendar'>" + seg_content + "</span></div>"
+	)
 	return ret_string
+
 
 def format_events(events: tuple[CalendarInfo]) -> dict[str, str]:
 	"""
@@ -102,19 +101,23 @@ def format_events(events: tuple[CalendarInfo]) -> dict[str, str]:
 	if not events:
 		final_events += "<hr style='border: 1px #B0197E solid;'>"
 
-		final_events += calendar_to_html(":(","No Events on the Calendar")
+		final_events += calendar_to_html(":(", "No Events on the Calendar")
 
 		final_events += "<hr style='border: 1px #B0197E solid;'>"
 
 		return {"data": final_events}
 
 	for event in events:
-		event_cur_happening: bool =  event.date < current_date
+		event_cur_happening: bool = event.date < current_date
 		if event_cur_happening:
-			formatted:str = f"Happening in {event.location}!" if event.location else "Happpening Now!"
-			final_events += calendar_to_html(formatted,event.name)
+			formatted: str = (
+				f"Happening in {event.location}!"
+				if event.location
+				else "Happpening Now!"
+			)
+			final_events += calendar_to_html(formatted, event.name)
 		else:
-			final_events += calendar_to_html(event.date.humanize().title(),event.name)
+			final_events += calendar_to_html(event.date.humanize().title(), event.name)
 
 		final_events += "<hr style='border: 1px #B0197E solid;'>"
 	return {"data": final_events}
@@ -220,7 +223,6 @@ async def get_future_events() -> tuple[CalendarInfo]:
 		logger.info("Pulling from CSH calendar cache!")
 		return calendar_cache
 
-	
 	logger.info("Checking to rebuild CSH Calendar...")
 	try:
 		headers: dict[str, str | None] = {}
@@ -248,7 +250,7 @@ async def get_future_events() -> tuple[CalendarInfo]:
 		if cal_currently_rebuilding:
 			await rebuild_calendar()
 			return calendar_cache
-		
+
 		if cal_correct_length:
 			logger.info("Calendar cache is full length, rebuilding async!")
 			asyncio.create_task(

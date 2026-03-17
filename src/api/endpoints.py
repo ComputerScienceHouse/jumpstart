@@ -25,7 +25,9 @@ async def get_calendar() -> JSONResponse:
 	"""
 
 	logger.warning("UPDATING CALENDAR")
-	get_future_events_ical: tuple[cshcalendar.CalendarInfo] = await cshcalendar.get_future_events()
+	get_future_events_ical: tuple[
+		cshcalendar.CalendarInfo
+	] = await cshcalendar.get_future_events()
 	formatted_events: dict = cshcalendar.format_events(get_future_events_ical)
 
 	return JSONResponse(formatted_events)

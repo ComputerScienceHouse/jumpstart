@@ -9,7 +9,7 @@ import re
 
 logging.basicConfig(level=logging.INFO)
 
-CYCLE_DEBOUNCE_TIME=12 # How long it takes to resfresh wiki titles
+CYCLE_DEBOUNCE_TIME = 12  # How long it takes to resfresh wiki titles
 BATCH_SIZE: int = 50  # max titles per request
 
 HEADERS: dict[str, str] = {"User-Agent": "JumpstartFetcher/1.0"}
@@ -29,9 +29,10 @@ last_modifed: str | None = None
 
 queued_pages: list[str] = []
 shown_pages: list[str] = []
-current_page: dict[str,str] = {"page": "NA","content":"NA"}
+current_page: dict[str, str] = {"page": "NA", "content": "NA"}
 
 page_last_updated: datetime | None = None
+
 
 def clean_wikitext(text: str) -> str:
 	"""
@@ -43,7 +44,7 @@ def clean_wikitext(text: str) -> str:
 	Returns:
 		str: The cleaned up text string
 	"""
-	
+
 	# [https... Text] -> Text
 	text = re.sub(r"\[https?:\/\/\S+\s+\"?([^\]\"]+)\"?\]", r"\1", text)
 
@@ -63,11 +64,9 @@ def clean_wikitext(text: str) -> str:
 
 	# Remove HTML tags
 	text = re.sub(r"<.*?>", "", text)
-	
+
 	# Remove bold/italic markup
 	text = re.sub(r"''+", "", text)
-
-
 
 	return text.strip()
 
@@ -262,7 +261,7 @@ def reset_queues():
 	logger.warning("RESETING QUEUES FOR WIKITHOUGHTS")
 	if len(queued_pages) > 0:
 		return
-	
+
 	queued_pages = shown_pages
 	random.shuffle(queued_pages)
 	shown_pages = []
@@ -278,16 +277,21 @@ async def get_next_display():
 	"""
 	global queued_pages, shown_pages, page_last_updated, current_page
 
-	if page_last_updated and (page_last_updated < datetime.now() + timedelta(seconds=CYCLE_DEBOUNCE_TIME)):
+	if page_last_updated and (
+		page_last_updated < datetime.now() + timedelta(seconds=CYCLE_DEBOUNCE_TIME)
+	):
 		logger.warning("Pulling from quote cache!")
 		return current_page
-	
+
 	await refresh_category_pages()
 
 	que_empty: bool = len(queued_pages) == 0
 	if que_empty and len(shown_pages) == 0:
 		logger.warning("ERROR?!?")
-		current_page = {"page": "ERROR GETTING PAGE", "content": "ERROR FETCHING CONTENT"}
+		current_page = {
+			"page": "ERROR GETTING PAGE",
+			"content": "ERROR FETCHING CONTENT",
+		}
 	elif que_empty:
 		reset_queues()
 		que_empty = False
