@@ -51,4 +51,11 @@ plugins:
         python:
           paths: ["src"]
           options:
-            heading_level
+            heading_level: 3
+            show_source: true
+            docstring_style: google
+            show_root_heading: false
+            show_root_full_path: false
+            show_signature: false
+            filters:
+              - ".*"

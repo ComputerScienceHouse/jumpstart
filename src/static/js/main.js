@@ -53,7 +53,7 @@ async function longUpdate() {
             calendarText.css("color", "white");
         }
 
-        $("#datadog").attr('src', ddog_dashboard + new Date().getTime());
+        $("#datadog").attr('src', ddog_dashboard + new Date().now());
 
     } catch (err) {
         console.log(err);
