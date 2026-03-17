@@ -76,21 +76,11 @@ async function mediumUpdate() {
     }
 }
 
-async function shortUpdate() {
-    try {
-        const res = await fetch('/api/harold', { method: 'GET', mode: 'cors' });
-        const data = await res.json();
-        $("#harold-file-name").text(data.data);
-    } catch (err) {
-        console.log(err);
-    }
-}
 
-shortUpdate();
+
 mediumUpdate();
 longUpdate();
 
-setInterval(longUpdate, 360000);
-setInterval(mediumUpdate, 13000);
-setInterval(shortUpdate, 4000);
+setInterval(longUpdate, 60000);
+setInterval(mediumUpdate, 22000);
 setInterval(() => { if (window.__weatherwidget_init) window.__weatherwidget_init(); }, 1800000);

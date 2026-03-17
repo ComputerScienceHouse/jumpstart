@@ -31,7 +31,8 @@ async def lifespan(app: FastAPI):
 	await wikithoughts.auth_bot()
 	yield
 	logger.info("Shutting down the Jumpstart application!")
-	await cshcalendar.close_cal_client()
+	await cshcalendar.close_client()
+	
 	logger.info("Succesfully shut down the Jumpstart application!")
 
 

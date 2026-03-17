@@ -9,8 +9,9 @@ import re
 
 logging.basicConfig(level=logging.INFO)
 
-
+CYCLE_DEBOUNCE_TIME=12 # How long it takes to resfresh wiki titles
 BATCH_SIZE: int = 50  # max titles per request
+
 HEADERS: dict[str, str] = {"User-Agent": "JumpstartFetcher/1.0"}
 AUTH: tuple[str] = (WIKIBOT_USER, WIKIBOT_PASSWORD)
 
@@ -28,26 +29,45 @@ last_modifed: str | None = None
 
 queued_pages: list[str] = []
 shown_pages: list[str] = []
+current_page: dict[str,str] = {"page": "NA","content":"NA"}
 
+page_last_updated: datetime | None = None
 
 def clean_wikitext(text: str) -> str:
 	"""
-	Function for cleaning markdown text to be displayed
+	Function for cleaning markdown text using regex commands
+
+	Args:
+		text (str): The text to be cleaned
+
+	Returns:
+		str: The cleaned up text string
 	"""
-	# [[Page|Text]] → Text
+	
+	# [https... Text] -> Text
+	text = re.sub(r"\[https?:\/\/\S+\s+\"?([^\]\"]+)\"?\]", r"\1", text)
+
+	# [[File: Page|Text]] → Text
+	text = re.sub(r"\[\[File:[^\]]*\]\]", "", text, flags=re.IGNORECASE)
+
+	# [[Image: Page|Text]] -> Text
+	text = re.sub(r"\[\[Image:[^\]]*\]\]", "", text, flags=re.IGNORECASE)
+	# [[Page|Text]] -> Text
 	text = re.sub(r"\[\[[^\|\]]*\|([^\]]+)\]\]", r"\1", text)
 
-	# [[Page]] → Page
+	# [[Page]] -> Page
 	text = re.sub(r"\[\[([^\]]+)\]\]", r"\1", text)
 
 	# Remove templates {{...}}
 	text = re.sub(r"\{\{.*?\}\}", "", text, flags=re.DOTALL)
 
+	# Remove HTML tags
+	text = re.sub(r"<.*?>", "", text)
+	
 	# Remove bold/italic markup
 	text = re.sub(r"''+", "", text)
 
-	# Remove HTML tags
-	text = re.sub(r"<.*?>", "", text)
+
 
 	return text.strip()
 
@@ -68,7 +88,7 @@ def batch_iterable(iterable: list, size: int):
 		yield batch
 
 
-async def auth_bot():
+async def auth_bot() -> None:
 	"""
 	Authenticates the CSH Wiki bot, logging if it was succesful or not
 	"""
@@ -101,9 +121,9 @@ async def auth_bot():
 		logger.warning("Bot was unable to authenticate!")
 
 
-async def refresh_category_pages():
+async def refresh_category_pages() -> list[str]:
 	"""
-	Function for fetching all pages of a MediaWiki Category
+	Refreshes all pages of the category
 
 	Args:
 	    category (str): The name of the category to search through
@@ -235,11 +255,16 @@ async def refresh_page_dictionary():
 
 
 def reset_queues():
-	global queued_pages, shown_pages
 	"""
 	Swaps Queued and Shown pages que
 	"""
+	global queued_pages, shown_pages
+	logger.warning("RESETING QUEUES FOR WIKITHOUGHTS")
+	if len(queued_pages) > 0:
+		return
+	
 	queued_pages = shown_pages
+	random.shuffle(queued_pages)
 	shown_pages = []
 
 
@@ -251,15 +276,21 @@ async def get_next_display():
 	Returns:
 		dict["page": str,"content": str]: The JSON of the page name and the first paragraph
 	"""
-	global queued_pages, shown_pages
+	global queued_pages, shown_pages, page_last_updated, current_page
+
+	if page_last_updated and (page_last_updated < datetime.now() + timedelta(seconds=CYCLE_DEBOUNCE_TIME)):
+		logger.warning("Pulling from quote cache!")
+		return current_page
+	
 	await refresh_category_pages()
 
 	que_empty: bool = len(queued_pages) == 0
 	if que_empty and len(shown_pages) == 0:
 		logger.warning("ERROR?!?")
-		return {"page": "ERROR GETTING PAGE", "content": "ERROR FETCHING CONTENT"}
+		current_page = {"page": "ERROR GETTING PAGE", "content": "ERROR FETCHING CONTENT"}
 	elif que_empty:
 		reset_queues()
+		que_empty = False
 
 	new_page: str = queued_pages.pop()
 
@@ -270,6 +301,8 @@ async def get_next_display():
 
 	if new_page in page_dict_cache:
 		new_content = page_dict_cache[new_page]
-		return {"page": new_page, "content": new_content}
+		current_page = {"page": new_page, "content": new_content}
+	else:
+		current_page = {"page": new_page, "content": "ERROR FETCHING CONTENT"}
 
-	return {"page": new_page, "content": "ERROR FETCHING CONTENT"}
+	return current_page
