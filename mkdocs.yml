@@ -44,8 +44,6 @@ nav:
       - Calendar: core/CSH Calendar.md
       - Slack: core/Slack.md
       - Wikithoughts: core/Wiki-thoughts.md
-  - Scripts:
-      - Setup: getting-started/setup.md
 
 plugins:
   - search
