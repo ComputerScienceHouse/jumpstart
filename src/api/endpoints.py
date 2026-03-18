@@ -14,7 +14,7 @@ logger: Logger = getLogger(__name__)
 router: APIRouter = APIRouter()
 
 
-@router.get("/calendar")
+@router.get("/api/calendar")
 async def get_calendar() -> JSONResponse:
 	"""
 	Returns calendar data.
@@ -31,7 +31,7 @@ async def get_calendar() -> JSONResponse:
 	return JSONResponse(formatted_events)
 
 
-@router.get("/announcement")
+@router.get("/api/announcement")
 def get_announcement() -> JSONResponse:
 	"""
 	Returns announcement data.
@@ -57,7 +57,7 @@ async def slack_events(request: Request) -> JSONResponse:
 
 	try:
 		logger.info("Received Slack event!")
-		
+
 		body: dict = await request.json()
 		if request.headers.get("content-type") == "application/json":
 			
@@ -128,7 +128,7 @@ async def message_actions(payload: str = Form(...)) -> JSONResponse:
 	return JSONResponse({"status": "success"}, status_code=200)
 
 
-@router.get("/wikithought")
+@router.get("/api/wikithought")
 async def wikithought() -> JSONResponse:
 	"""
 	Returns a random CSH wiki thought from the MediaWiki API.

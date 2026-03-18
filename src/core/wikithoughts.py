@@ -247,7 +247,7 @@ async def refresh_page_dictionary() -> None:
 
 def reset_queues() -> None:
 	"""
-	Swaps Queued and Shown pages que
+	Swaps Queued and Shown pages queued
 	"""
 	global queued_pages, shown_pages
 	logger.warning("RESETING QUEUES FOR WIKITHOUGHTS")
@@ -277,20 +277,20 @@ async def get_next_display() -> dict[str, str]:
 
 	await refresh_category_pages()
 
-	que_empty: bool = len(queued_pages) == 0
-	if que_empty and len(shown_pages) == 0:
+	queue_empty: bool = len(queued_pages) == 0
+	if queue_empty and len(shown_pages) == 0:
 		logger.warning("ERROR?!?")
 		current_page = {
 			"page": "ERROR GETTING PAGE",
 			"content": "ERROR FETCHING CONTENT",
 		}
-	elif que_empty:
+	elif queue_empty:
 		reset_queues()
-		que_empty = False
+		queue_empty = False
 
 	new_page: str = queued_pages.pop()
 
-	if que_empty:
+	if queue_empty:
 		reset_queues()
 
 	shown_pages.append(new_page)
