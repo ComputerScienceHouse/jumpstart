@@ -59,7 +59,7 @@ def clean_wikitext(text: str) -> str:
 
 	# ^^CSH Account^^ -> User CSH Account
 	text = re.sub(r"\^\^([^\]]+)\^\^", r"User \1", text)
-	
+
 	# Remove templates {{...}}
 	text = re.sub(r"\{\{.*?\}\}", "", text, flags=re.DOTALL)
 
@@ -139,9 +139,9 @@ async def refresh_category_pages() -> list[str]:
 		queued_pages, \
 		shown_pages
 
-	if not bot_authenticated:
-		logger.warning("Bot is not authenticated, cancelling fetch of category pages")
-		return
+	# if not bot_authenticated:
+	# 	logger.warning("Bot is not authenticated, cancelling fetch of category pages")
+	# 	return
 
 	time_now: datetime = datetime.now()
 	if (
@@ -183,13 +183,17 @@ async def refresh_category_pages() -> list[str]:
 			last_modifed = response.headers.get("Last-Modified")
 
 			r_json: dict[str, str] = response.json()
-			for page in r_json["query"]["categorymembers"]:
-				titles.append(page["title"])
+			if "query" in r_json:
+				for page in r_json["query"]["categorymembers"]:
+					titles.append(page["title"])
 
-			# Loop to keep everything going
-			if "continue" in r_json:
-				params["cmcontinue"] = r_json["continue"]["cmcontinue"]
+				# Loop to keep everything going
+				if "continue" in r_json:
+					params["cmcontinue"] = r_json["continue"]["cmcontinue"]
+				else:
+					break
 			else:
+				logger.warning(f"Failure in obtaining info, JSON:\n{r_json}")
 				break
 		else:
 			logger.warning("Failed to update the CSH wiki page!")
@@ -233,17 +237,21 @@ async def refresh_page_dictionary() -> None:
 
 	for r in responses:
 		r_json = r.json()
-		for page in r_json["query"]["pages"].values():
-			wikitext = page["revisions"][0]["slots"]["main"]["*"]
+		if "query" in r_json:
+			for page in r_json["query"]["pages"].values():
+				wikitext = page["revisions"][0]["slots"]["main"]["*"]
 
-			cleaned_text = clean_wikitext(wikitext)  # unfuck the text
+				cleaned_text = clean_wikitext(wikitext)  # unfuck the text
 
-			paragraphs = cleaned_text.split("\n\n")  # Cut the first line
-			first_paragraph = (
-				paragraphs[0].strip() if paragraphs else ""
-			)  # Incase nick messes up?
+				paragraphs = cleaned_text.split("\n\n")  # Cut the first line
+				first_paragraph = (
+					paragraphs[0].strip() if paragraphs else ""
+				)  # Incase nick messes up?
 
-			results[page["title"]] = first_paragraph
+				results[page["title"]] = first_paragraph
+		else:
+			logger.warning(f"Failure in refreshing the wiki page dictionary, JSON:\n{r_json}")
+			results = {"ERROR":"ERROR"}
 
 	page_dict_cache = results
 
@@ -287,6 +295,7 @@ async def get_next_display() -> dict[str, str]:
 			"page": "ERROR GETTING PAGE",
 			"content": "ERROR FETCHING CONTENT",
 		}
+		return
 	elif queue_empty:
 		reset_queues()
 		queue_empty = False
