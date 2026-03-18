@@ -4,7 +4,6 @@ import json
 import httpx
 import random
 import textwrap
-import asyncio
 
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import JSONResponse
@@ -58,14 +57,14 @@ async def slack_events(request: Request) -> JSONResponse:
 
 	try:
 		logger.info("Received Slack event!")
-
+		
+		body: dict = await request.json()
 		if request.headers.get("content-type") == "application/json":
-			body: dict = await request.json()
+			
 
 			if body.get("type") == "url_verification":
 				return JSONResponse({"challenge": body.get("challenge")})
 
-		body: dict = await request.json()
 		if not body:
 			return JSONResponse({"challenge": body.get("challenge")})
 

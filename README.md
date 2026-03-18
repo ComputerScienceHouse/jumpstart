@@ -12,7 +12,7 @@ This project uses Python, [FastAPI](https://fastapi.tiangolo.com/), HTML/CSS, an
 See it live [here](http://jumpstart-squared.cs.house/)!
 
 ## Installing
-1. Clone and cd into the repo: `git clone https://github.com/WeatherGod3218/jumpstartV2
+1. Clone and cd into the repo: git clone https://github.com/WeatherGod3218/jumpstartV2
 >> (OPTIONAL): Make another branch if your working on a large thing!
 
 ## Setup
