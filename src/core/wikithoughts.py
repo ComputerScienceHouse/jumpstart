@@ -57,6 +57,9 @@ def clean_wikitext(text: str) -> str:
 	# [[Page]] -> Page
 	text = re.sub(r"\[\[([^\]]+)\]\]", r"\1", text)
 
+	# ^^CSH Account^^ -> User CSH Account
+	text = re.sub(r"\^\^([^\]]+)\^\^", r"User \1", text)
+	
 	# Remove templates {{...}}
 	text = re.sub(r"\{\{.*?\}\}", "", text, flags=re.DOTALL)
 
