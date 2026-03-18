@@ -130,42 +130,12 @@ async def message_actions(payload: str = Form(...)) -> JSONResponse:
 
 @router.get("/wikithought")
 async def wikithought() -> JSONResponse:
+	"""
+	Returns a random CSH wiki thought from the MediaWiki API.
+
+	Returns:
+		JSONResponse: A JSON response containing a random Wiki thought.
+	"""
 	returned_page_data: dict[str, str] = await wikithoughts.get_next_display()
 	return JSONResponse(returned_page_data)
 
-
-@router.get("/showerthoughts")
-async def showerthoughts() -> JSONResponse:
-	"""
-	Returns a random shower thought from the Reddit API.
-
-	Returns:
-		JSONResponse: A JSON response containing a random shower thought.
-	"""
-
-	response: dict = {"data": "No shower thoughts found."}
-
-	try:
-		logger.info("Fetching shower thoughts from Reddit API...")
-
-		async with httpx.AsyncClient() as client:
-			reddit_data: httpx.Response = await client.get(
-				"https://www.reddit.com/r/showerthoughts/top.json",
-				headers={"User-agent": "Showerthoughtbot 0.1"},
-			)
-
-			reddit_json = reddit_data.json()
-
-		if len(reddit_json["data"]["children"]) == 0:
-			logger.warning("No shower thoughts found in Reddit API response.")
-			return JSONResponse(response)
-
-		shower_thought: str = textwrap.fill(
-			(random.choice(reddit_json["data"]["children"])["data"]["title"]), 50
-		)
-
-		response["data"] = shower_thought
-	except Exception as e:
-		logger.error(f"Error fetching shower thoughts: {e}")
-
-	return JSONResponse(response)
