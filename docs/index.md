@@ -1,6 +1,3 @@
-# TODO
-- Add a link the mkDocs we do
-
 # Jumpstart V2: Electric Boogaloo
 
 ![image](./docs/images/jumpstart_transparant.png)
