@@ -136,4 +136,3 @@ async def wikithought() -> JSONResponse:
 	"""
 	returned_page_data: dict[str, str] = await wikithoughts.get_next_display()
 	return JSONResponse(returned_page_data)
-
