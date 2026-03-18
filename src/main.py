@@ -64,7 +64,7 @@ else:
 	logger.warning("Documentation directory not found, skipping documentation setup!")
 
 logger.info("Importing API endpoints!")
-#app.include_router(endpoints.router, prefix="/api")
+# app.include_router(endpoints.router, prefix="/api")
 app.include_router(endpoints.router)
 
 logger.info("Finished setting up the application!")

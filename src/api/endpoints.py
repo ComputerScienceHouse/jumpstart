@@ -60,8 +60,6 @@ async def slack_events(request: Request) -> JSONResponse:
 
 		body: dict = await request.json()
 		if request.headers.get("content-type") == "application/json":
-			
-
 			if body.get("type") == "url_verification":
 				return JSONResponse({"challenge": body.get("challenge")})
 
