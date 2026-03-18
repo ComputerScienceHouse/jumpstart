@@ -39,7 +39,7 @@ nav:
   - Home: index.md
   - Getting Started: docs/getting-started/getting-started.md
   - Endpoints:
-      - v1: docs/endpoints/endpoints.md
+      - v1: docs/api/endpoints.md
   - Scripts:
       - Setup: docs/getting-started/setup.md
 
