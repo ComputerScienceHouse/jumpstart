@@ -44,6 +44,12 @@ nav:
       - Calendar: core/CSH Calendar.md
       - Slack: core/Slack.md
       - Wikithoughts: core/Wiki-thoughts.md
+      - Calendar: endpoints/calendar_endpoint.md
+      - Announcements: endpoints/announcements.md
+      - Slack Bot: endpoints/slack_bot.md
+      - Wiki Thoughts: endpoints/wikithoughts.md
+  - Scripts:
+      - Setup: getting-started/setup.md
 
 plugins:
   - search
