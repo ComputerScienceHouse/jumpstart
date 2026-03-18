@@ -87,7 +87,7 @@ def batch_iterable(iterable: list, size: int):
 
 async def auth_bot() -> None:
 	"""
-	Authenticates the CSH Wiki bot, logging if it was succesful or not
+	Authenticates the CSH Wiki bot, logging if it was successful or not
 	"""
 	token_req: httpx.Response = await client.get(
 		WIKI_API,
@@ -113,7 +113,7 @@ async def auth_bot() -> None:
 		global bot_authenticated
 
 		bot_authenticated = True
-		logger.info("Bot was authenticated succesfully!")
+		logger.info("Bot was authenticated successfully!")
 	else:
 		logger.warning("Bot was unable to authenticate!")
 
@@ -204,7 +204,7 @@ async def refresh_category_pages() -> list[str]:
 
 async def refresh_page_dictionary() -> None:
 	"""
-	Fetches the pages based off the cace of page titles, and updates the page cache accordingly
+	Fetches the pages based off the cache of page titles, and updates the page cache accordingly
 
 	"""
 	global page_dict_cache, page_title_cache
