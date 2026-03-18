@@ -139,9 +139,9 @@ async def refresh_category_pages() -> list[str]:
 		queued_pages, \
 		shown_pages
 
-	# if not bot_authenticated:
-	# 	logger.warning("Bot is not authenticated, cancelling fetch of category pages")
-	# 	return
+	if not bot_authenticated:
+		logger.warning("Bot is not authenticated, cancelling fetch of category pages")
+		return
 
 	time_now: datetime = datetime.now()
 	if (
