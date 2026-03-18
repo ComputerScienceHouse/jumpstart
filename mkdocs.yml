@@ -37,11 +37,11 @@ use_directory_urls: false
 
 nav:
   - Home: index.md
-  - Getting Started: docs/getting-started/getting-started.md
+  - Getting Started: getting-started/getting-started.md
   - Endpoints:
-      - v1: docs/api/endpoints.md
+      - v1: endpoints/endpoints.md
   - Scripts:
-      - Setup: docs/getting-started/setup.md
+      - Setup: getting-started/setup.md
 
 plugins:
   - search
