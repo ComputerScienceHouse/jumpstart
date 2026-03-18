@@ -83,20 +83,20 @@ body{
     text-align: center;
 }
 
-.shower-thoughts{
+.wikithoughts{
     float: left;
     width: 100%;
     padding-left: 1%;
 }
 
-.shower-thoughts-text-header{
+.wikithoughts-text-header{
     color: white;
     font-family: 'Courier New', Courier, monospace;
     font-size: 20px;
     text-align: center;
 }
 
-.shower-thoughts-text-body{
+.wikithoughts-text-body{
     color: black;
     font-family: 'Courier New', Courier, monospace;
     font-size: 18px;
@@ -133,7 +133,7 @@ body{
 }
 
 @media screen and (max-width: 1899px) {
-    .shower-thoughts{
+    .wikithoughts{
         width: 49%;
         padding-top: 1%;
     }
@@ -175,7 +175,7 @@ body{
 /*        margin-top: 2%;
 */        width: 100%;
     }
-    .shower-thoughts{
+    .wikithoughts{
         width: 100%;
         padding-top: 2%;
     }

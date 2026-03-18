@@ -17,7 +17,7 @@ from config import (
 )
 import asyncio
 
-calendar_cache: tuple[CalendarInfo] = ()  # The current cache of the calendar
+calendar_cache: list[CalendarInfo] = []  # The current cache of the calendar
 cal_last_update: date | None = (
 	None  # The last time the calendar was fetched and updated the cache
 )
@@ -27,7 +27,8 @@ header_none_match: str | None = (
 header_last_modified: str | None = (
 	None  # Used for the httpx.get to see when the calndar was last modified
 )
-cal_currently_rebuilding: bool = False  # Tells if the calendar is being rebuilt
+cal_constructed_event: asyncio.Event = asyncio.Event()
+cal_constructed_event.clear()
 
 logger: Logger = getLogger(__name__)
 logger.info("Starting up the calendar service!")
@@ -43,25 +44,38 @@ class CalendarInfo:
 
 	def __init__(self, name: str, date_time: date, location: str | None = None):
 		self.name: str = name
-
-		if isinstance(date_time, date) and not isinstance(date_time, datetime):
-			date_time = arrow.combine(
-				date_time, time.min, tzinfo=ZoneInfo(CALENDAR_TIMEZONE)
-			)
-		elif not date_time.tzinfo:
-			date_time = date_time.replace(tzinfo=ZoneInfo(CALENDAR_TIMEZONE))
 		self.date: arrow.arrow = arrow.get(date_time)  # Arrow has way cooler stuff
 		self.location: str | None = location
 
 	def __eq__(self, other):
 		if not isinstance(other, CalendarInfo):
 			return False
-		return (self.name == other.name) and (self.date == self.date)
+		return (self.name == other.name) and (self.date == other.date)
 
 	def __hash__(self):
-		return (
-			hash(self.name) + hash(self.date)
-		)  # Might be stupid only hashing off name, but as of right now I think the implementation works
+		return hash((self.name, self.date))
+
+
+def calendar_to_html(seg_header: str, seg_content: str) -> str:
+	"""
+	Formats a header and content into the HTML for the calendar front end
+
+	Args:
+		seg_header (str): The header of the calendar segment
+		seg_content (str): The content in the calendar segment
+
+	Returns:
+		str:
+	"""
+	ret_string: str = (
+		"""<div class='calendar-event-container-lvl2'><span class='calendar-text-date'> """
+		+ seg_header
+		+ """ </span><br>"""
+	)
+	ret_string += (
+		"<span class='calendar-text' id='calendar'>" + seg_content + "</span></div>"
+	)
+	return ret_string
 
 
 def format_events(events: tuple[CalendarInfo]) -> dict[str, str]:
@@ -80,39 +94,25 @@ def format_events(events: tuple[CalendarInfo]) -> dict[str, str]:
 
 	if not events:
 		final_events += "<hr style='border: 1px #B0197E solid;'>"
-		final_events += (
-			"""<div class='calendar-event-container-lvl2'><span class='calendar-text-date'> """
-			+ " "
-			+ """ </span><br>"""
-		)
-		final_events += (
-			"<span class='calendar-text' id='calendar'>"
-			+ "No Events on the Calendar!"
-			+ "</span></div>"
-		)
+
+		final_events += calendar_to_html(":(", "No Events on the Calendar")
+
+		final_events += "<hr style='border: 1px #B0197E solid;'>"
+
 		return {"data": final_events}
 
 	for event in events:
-		formatted: str = ""
-		if event.date < current_date:
-			formatted = (
+		event_cur_happening: bool = event.date < current_date
+		if event_cur_happening:
+			formatted: str = (
 				f"Happening in {event.location}!"
 				if event.location
 				else "Happening Now!"
 			)
+			final_events += calendar_to_html(formatted, event.name)
 		else:
-			formatted = event.date.humanize().title()
+			final_events += calendar_to_html(event.date.humanize().title(), event.name)
 
-		final_events += (
-			"""<div class='calendar-event-container-lvl2'><span class='calendar-text-date'> """
-			+ formatted
-			+ """ </span><br>"""
-		)
-		final_events += (
-			"<span class='calendar-text' id='calendar'>"
-			+ "".join(event.name)
-			+ "</span></div>"
-		)
 		final_events += "<hr style='border: 1px #B0197E solid;'>"
 	return {"data": final_events}
 
@@ -121,56 +121,56 @@ async def rebuild_calendar() -> None:
 	"""
 	Fetches and rebuilds the global calendar cache. This does NOT return a new cache, but changes the global calendar cache
 	"""
-	global calendar_cache, cal_last_update, cal_currently_rebuilding
-
-	cal_currently_rebuilding = True
-
+	global calendar_cache, cal_last_update, cal_constructed_event
 	try:
+		cal_constructed_event.clear()
 		found_events: set[CalendarInfo] = set()
 		response: httpx.Response = await cshcal_client.get(CALENDAR_URL, timeout=10)
 		response.raise_for_status()
 
 		cal: Calendar = Calendar.from_ical(response.content)
 
-		current_time: date = datetime.now(ZoneInfo(CALENDAR_TIMEZONE))
+		current_time: datetime = datetime.now(ZoneInfo(CALENDAR_TIMEZONE))
 
 		fetched_daily_events: list[Event] = recurring_ical_events.of(cal).between(
 			current_time, current_time + timedelta(days=CALENDAR_OUTLOOK_DAYS)
 		)
 
 		for event in fetched_daily_events:
+			dt = event.get("DTSTART").dt
+
+			if isinstance(dt, date) and not isinstance(dt, datetime):
+				dt = datetime.combine(dt, time.min, tzinfo=ZoneInfo(CALENDAR_TIMEZONE))
+
+			elif dt.tzinfo is None:
+				dt = dt.replace(tzinfo=ZoneInfo(CALENDAR_TIMEZONE))
+
+			else:
+				dt = dt.astimezone(ZoneInfo(CALENDAR_TIMEZONE))
+
 			new_event: CalendarInfo = CalendarInfo(
 				event.get("SUMMARY"),
-				event.get("DTSTART").dt,
+				dt,
 				event.get("LOCATION"),
 			)
+
 			found_events.add(new_event)
+
+		cal = None
+		fetched_daily_events = None
 	except Exception as e:
 		logger.warning("Failed to rebuild calendar cache! Error:")
 		logger.warning(e)
+		cal_constructed_event.set()
 
 	cal_last_update = current_time
 	calendar_cache = sorted(found_events, key=lambda x: x.date)[
 		:CALENDAR_EVENT_MAXIMUM
 	]  # Only cache the first elements of this list
-	cal_currently_rebuilding = False
+	cal_constructed_event.set()
 
 
-async def wait_for_rebuild() -> tuple[CalendarInfo]:
-	"""
-	Simple yielding function for waiting to return the freshly made calendar cache, rather than proceeding with the obtain
-
-	Returns:
-		list: A list of CalendarInfo objects
-	"""
-	global cal_currently_rebuilding
-	while cal_currently_rebuilding:
-		await asyncio.sleep(1)
-
-	return calendar_cache
-
-
-async def get_future_events() -> tuple[CalendarInfo]:
+async def get_future_events() -> list[CalendarInfo]:
 	"""
 	Returns the first events up to event maximum within the the calendar outlook day amount
 	custom object has name, date and the location
@@ -178,18 +178,21 @@ async def get_future_events() -> tuple[CalendarInfo]:
 	Returns:
 		list: A list of CalendarInfo objects
 	"""
+
 	global \
 		calendar_cache, \
 		cal_last_update, \
 		header_last_modified, \
 		header_none_match, \
-		cal_currently_rebuilding
+		cal_constructed_event
 
-	if cal_currently_rebuilding:
-		return await wait_for_rebuild()
+	if not cal_constructed_event.is_set():
+		await cal_constructed_event.wait()
+		return calendar_cache
 
 	cur_time: date = datetime.now(ZoneInfo(CALENDAR_TIMEZONE))
 	cal_correct_length: bool = len(calendar_cache) == CALENDAR_EVENT_MAXIMUM
+
 	if (
 		cal_last_update
 		and cal_correct_length
@@ -222,24 +225,29 @@ async def get_future_events() -> tuple[CalendarInfo]:
 		header_none_match = response.headers.get("ETag")
 		header_last_modified = response.headers.get("Last-Modified")
 
-		if cal_currently_rebuilding:
-			return await wait_for_rebuild()
+		if (
+			not cal_constructed_event.is_set()
+		):  # Double check, since it might have changed for the last modifed
+			await cal_constructed_event.wait()
+			return calendar_cache
 
 		if cal_correct_length:
 			logger.info("Calendar cache is full length, rebuilding async!")
-			asyncio.create_task(
+			running_task = asyncio.create_task(
 				rebuild_calendar()
 			)  # Calendar is correct length, we can just run this in the background
+			# Make it a variable for GC purposes? idk sonarqube told me to do it
 		else:
 			logger.info("Calendar cache is NOT full length, yielding rebuild!")
 			await rebuild_calendar()
+
 		return calendar_cache
 	except Exception as e:
 		logger.warning("Failed to fetch the Calendar!")
 		logger.warning(e)
 
 
-async def close_cal_client() -> None:
+async def close_client() -> None:
 	"""
 	Closes the calendar's HTTPX client, logs if the event loops has been
 	closed prior to the function being called
@@ -247,6 +255,7 @@ async def close_cal_client() -> None:
 	global cshcal_client
 	try:
 		await cshcal_client.aclose()
+		logger.info("Succesfully closed the cshcal client")
 	except RuntimeError as e:
 		logger.warning("EVENT LOOP HAS ALREADY CLOSED, FAILED TO CLOSE csh_cal")
 	return

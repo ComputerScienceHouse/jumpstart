@@ -18,6 +18,11 @@ CALENDAR_EVENT_MAXIMUM: int = int(os.getenv("CALENDAR_EVENT_MAXIMUM", "10"))
 CALENDAR_TIMEZONE: str = os.getenv("CALENDAR_TIMEZONE", "America/New_York")
 CALENDAR_CACHE_REFRESH: int = int(os.getenv("CALENDAR_CACHE_REFRESH", "10"))
 
+WIKI_API: str | None = os.getenv("WIKI_API", None)
+WIKIBOT_USER: str | None = os.getenv("WIKIBOT_USER", None)
+WIKIBOT_PASSWORD: str | None = os.getenv("WIKIBOT_PASSWORD", None)
+WIKI_CATEGORY: str = os.getenv("WIKI_CATEGORY", "JobAdvice")
+
 if SLACK_API_TOKEN in (None, ""):
 	raise Exception("Missing SLACK_API_TOKEN")
 

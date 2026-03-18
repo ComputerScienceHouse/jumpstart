@@ -6,6 +6,7 @@ V1 Authors: Beckett Jenen
 """
 
 import os
+import asyncio
 
 from logging import getLogger, Logger
 
@@ -19,7 +20,7 @@ from contextlib import asynccontextmanager
 from config import BASE_DIR
 
 from api import endpoints
-from core import cshcalendar
+from core import cshcalendar, wikithoughts
 
 logger: Logger = getLogger(__name__)
 
@@ -27,9 +28,12 @@ logger: Logger = getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 	logger.info("Starting up the Jumpstart application!")
+	asyncio.create_task(cshcalendar.rebuild_calendar())
+	await wikithoughts.auth_bot()
 	yield
 	logger.info("Shutting down the Jumpstart application!")
-	await cshcalendar.close_cal_client()
+	await cshcalendar.close_client()
+
 	logger.info("Succesfully shut down the Jumpstart application!")
 
 
