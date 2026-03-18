@@ -44,13 +44,6 @@ class CalendarInfo:
 
 	def __init__(self, name: str, date_time: date, location: str | None = None):
 		self.name: str = name
-
-		if isinstance(date_time, date) and not isinstance(date_time, datetime):
-			date_time = date_time.combine(
-				date_time, time.min, tzinfo=ZoneInfo(CALENDAR_TIMEZONE)
-			)
-		elif not date_time.tzinfo:
-			date_time = date_time.astimezone(tzinfo=ZoneInfo(CALENDAR_TIMEZONE))
 		self.date: arrow.arrow = arrow.get(date_time)  # Arrow has way cooler stuff
 		self.location: str | None = location
 
@@ -114,7 +107,7 @@ def format_events(events: tuple[CalendarInfo]) -> dict[str, str]:
 			formatted: str = (
 				f"Happening in {event.location}!"
 				if event.location
-				else "Happpening Now!"
+				else "Happening Now!"
 			)
 			final_events += calendar_to_html(formatted, event.name)
 		else:
