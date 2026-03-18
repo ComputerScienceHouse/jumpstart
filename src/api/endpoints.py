@@ -9,6 +9,7 @@ from fastapi import APIRouter, Request, Form
 from fastapi.responses import JSONResponse
 
 from core import slack, cshcalendar, wikithoughts
+from config import WATCHED_CHANNELS
 
 logger: Logger = getLogger(__name__)
 router: APIRouter = APIRouter()
@@ -72,7 +73,7 @@ async def slack_events(request: Request) -> JSONResponse:
 		if event.get("subtype", None) is not None:
 			return JSONResponse({"status": "ignored"})
 
-		if not event.get("channel", "") in slack.WATCHED_CHANNELS:
+		if not event.get("channel", "") in WATCHED_CHANNELS:
 			return JSONResponse({"status": "ignored"})
 
 		await slack.request_upload_via_dm(event.get("user", ""), cleaned_text)
