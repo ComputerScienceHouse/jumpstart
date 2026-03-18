@@ -2,8 +2,7 @@
 
 ### Overview
 
-This API provides endpoints for securely storing, retrieving, and deleting Snyk credentials using OpenBao (Vault) and Redis as backends.
-All endpoints are versioned under `/credentials` and `/cache`.
+
 
 ---
 
@@ -27,4 +26,4 @@ Example error response:
 ```
 
 ### Endpoint Overview
-::: api.endpoints
+::: api.endpoints.get_calendar
