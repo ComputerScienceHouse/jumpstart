@@ -8,9 +8,8 @@ import textwrap
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import JSONResponse
 
-from core import slack, wikithoughts
+from core import slack, wikithoughts, cshcalendar
 from config import WATCHED_CHANNELS
-from src.core import cshcalendar
 
 logger: Logger = getLogger(__name__)
 router: APIRouter = APIRouter()
