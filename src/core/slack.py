@@ -101,7 +101,7 @@ def convert_user_response_to_bool(message_data: dict) -> bool:
 
 	try:
 		user_response = (
-			message_data.get("actions", [])[0].get("action_id", "no_j") == "yes_j"
+			message_data.get("actions", [{}])[0].get("action_id", "no_j") == "yes_j"
 		)
 	except Exception as e:
 		logger.error(f"Failed to parse data: {e}")
