@@ -98,7 +98,9 @@ async def message_actions(payload: str = Form(...)) -> JSONResponse:
 	"""
 
 	try:
+		logger.info(f"Received payload: {payload}")
 		form_json: dict = json.loads(payload)
+		logger.info(f"Parsed form_json: {form_json}")
 		response_url = form_json.get("response_url")
 
 		if form_json.get("type") != "block_actions":
