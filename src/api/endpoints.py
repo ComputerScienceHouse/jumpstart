@@ -107,7 +107,7 @@ async def message_actions(payload: str = Form(...)) -> JSONResponse:
 		if slack.convert_user_response_to_bool(form_json):
 			logger.info("User approved the announcement!")
 
-			messageObject = form_json.get("actions", [{}])[0].get("text", None)
+			messageObject = form_json.get("actions", [{}])[0].get("text", {}).get("text", None)
 			logger.info(f"Display Object {messageObject}")
 			slack.add_announcement()
 
