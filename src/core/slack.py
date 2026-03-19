@@ -71,10 +71,12 @@ async def request_upload_via_dm(user_id: str, announcement_text: str) -> None:
 		message: dict = SLACK_DM_TEMPLATE.copy()
 
 		message[0]["text"]["text"] += announcement_text
-		message[1]["elements"][0]["value"] = str({
-			"text": announcement_text,
-			"user": user_id,
-		})
+		message[1]["elements"][0]["value"] = str(
+			{
+				"text": announcement_text,
+				"user": user_id,
+			}
+		)
 
 		await client.chat_postMessage(
 			channel=user_id, text=SLACK_JUMPSTART_MESSAGE, blocks=message
@@ -98,8 +100,7 @@ def convert_user_response_to_bool(message_data: dict) -> bool:
 
 	try:
 		user_response = (
-			message_data.get("actions", []).get(0, {}).get("action_id", "no_j")
-			== "yes_j"
+			message_data.get("actions", [])[0].get("action_id", "no_j") == "yes_j"
 		)
 	except Exception as e:
 		logger.error(f"Failed to parse data: {e}")
