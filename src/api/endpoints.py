@@ -109,7 +109,7 @@ async def message_actions(payload: str = Form(...)) -> JSONResponse:
 
 			messageObject = form_json.get("actions", [{}])[0].get("text", {}).get("text", None)
 			logger.info(f"Display Object {messageObject}")
-			slack.add_announcement()
+			slack.add_announcement(messageObject)
 
 			if response_url:
 				await httpx.post(
