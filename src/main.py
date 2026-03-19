@@ -14,7 +14,6 @@ from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse, HTMLResponse
-from starlette.middleware.proxy_headers import ProxyHeadersMiddleware
 from contextlib import asynccontextmanager
 
 from config import BASE_DIR
@@ -38,7 +37,6 @@ async def lifespan(app: FastAPI):
 
 
 app: FastAPI = FastAPI(docs_url="/swag", lifespan=lifespan)
-app.add_middleware(ProxyHeadersMiddleware)
 
 logger.info("Mounting static files and templates!")
 app.mount(
