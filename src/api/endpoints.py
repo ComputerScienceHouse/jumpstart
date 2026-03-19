@@ -8,8 +8,9 @@ import textwrap
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import JSONResponse
 
-from core import slack, cshcalendar, wikithoughts
+from core import slack, wikithoughts
 from config import WATCHED_CHANNELS
+from src.core import cshcalendar
 
 logger: Logger = getLogger(__name__)
 router: APIRouter = APIRouter()
@@ -107,7 +108,9 @@ async def message_actions(payload: str = Form(...)) -> JSONResponse:
 		if slack.convert_user_response_to_bool(form_json):
 			logger.info("User approved the announcement!")
 			logger.info(f"{form_json}\n\n")
-			messageObject = json.loads(form_json.get("actions",[{}])[0].get("value",'{text:""}')).get("text",None)
+			messageObject = json.loads(
+				form_json.get("actions", [{}])[0].get("value", '{text:""}')
+			).get("text", None)
 			logger.info(f"Display Object {messageObject}")
 			slack.add_announcement(messageObject)
 

@@ -34,6 +34,12 @@ logger: Logger = getLogger(__name__)
 logger.info("Starting up the calendar service!")
 cshcal_client = httpx.AsyncClient()
 
+# Conversion from seconds
+MINUTE = 60
+HOUR = 3600
+DAY = 86400
+WEEK = 604800
+
 
 # Automatically format all info into the class
 class CalendarInfo:
@@ -54,6 +60,48 @@ class CalendarInfo:
 
 	def __hash__(self):
 		return hash((self.name, self.date))
+
+
+def ceil_division(num: int, den: int) -> int:
+	"""
+	Returns a ceiling division of the two numbers
+	Args:
+		num (int): the numerator
+		den (int): the denominator
+
+	Returns:
+		int: the result of the operation
+	"""
+	return int((num + den - 1) // den)
+
+
+def time_humanizer(current_time: datetime, event_time: datetime) -> str:
+	"""
+	Custom humanizer for text to be displayed
+
+	Args:
+		current_time (datetime): The current time to be judged off of
+		event_time (datetime): The events time to be factored
+	Returns:
+		str: The humanized time as a string
+	"""
+
+	time_before_event: int = (event_time - current_time).total_seconds()
+
+	if time_before_event < HOUR - MINUTE:
+		if time_before_event < MINUTE:
+			return "In 1 Minute"
+		return f"In {round(time_before_event / MINUTE)} Minutes"
+	elif time_before_event < DAY - HOUR:
+		if time_before_event < (HOUR * 1.5):
+			return "In 1 Hour"
+		return f"In {round(time_before_event / HOUR)} Hours"
+	elif time_before_event < WEEK - DAY:
+		if time_before_event < (DAY * 1.33):
+			return "In 1 Day"
+		return f"In {ceil_division(time_before_event, DAY)} Days"
+
+	return "Over a Week Away"
 
 
 def calendar_to_html(seg_header: str, seg_content: str) -> str:
@@ -111,7 +159,9 @@ def format_events(events: tuple[CalendarInfo]) -> dict[str, str]:
 			)
 			final_events += calendar_to_html(formatted, event.name)
 		else:
-			final_events += calendar_to_html(event.date.humanize().title(), event.name)
+			final_events += calendar_to_html(
+				time_humanizer(current_date, event.date), event.name
+			)
 
 		final_events += "<hr style='border: 1px #B0197E solid;'>"
 	return {"data": final_events}

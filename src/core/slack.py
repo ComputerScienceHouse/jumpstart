@@ -73,10 +73,12 @@ async def request_upload_via_dm(user_id: str, announcement_text: str) -> None:
 		message: dict = copy.deepcopy(SLACK_DM_TEMPLATE)
 
 		message[0]["text"]["text"] += announcement_text
-		message[1]["elements"][0]["value"] = json.dumps({
-			"text": announcement_text,
-			"user": user_id,
-		})
+		message[1]["elements"][0]["value"] = json.dumps(
+			{
+				"text": announcement_text,
+				"user": user_id,
+			}
+		)
 
 		await client.chat_postMessage(
 			channel=user_id, text=SLACK_JUMPSTART_MESSAGE, blocks=message
