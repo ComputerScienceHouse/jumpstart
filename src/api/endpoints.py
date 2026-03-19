@@ -98,9 +98,7 @@ async def message_actions(payload: str = Form(...)) -> JSONResponse:
 	"""
 
 	try:
-		logger.info(f"Received payload: {payload}")
 		form_json: dict = json.loads(payload)
-		logger.info(f"Parsed form_json: {form_json}")
 		response_url = form_json.get("response_url")
 
 		if form_json.get("type") != "block_actions":
@@ -109,7 +107,7 @@ async def message_actions(payload: str = Form(...)) -> JSONResponse:
 		if slack.convert_user_response_to_bool(form_json):
 			logger.info("User approved the announcement!")
 
-			slack.add_announcement(form_json.get("text", None))
+			slack.add_announcement(form_json.get("value", {}).get("text", None))
 
 			if response_url:
 				await httpx.post(
