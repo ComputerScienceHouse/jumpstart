@@ -250,8 +250,10 @@ async def refresh_page_dictionary() -> None:
 
 				results[page["title"]] = first_paragraph
 		else:
-			logger.warning(f"Failure in refreshing the wiki page dictionary, JSON:\n{r_json}")
-			results = {"ERROR":"ERROR"}
+			logger.warning(
+				f"Failure in refreshing the wiki page dictionary, JSON:\n{r_json}"
+			)
+			results = {"ERROR": "ERROR"}
 
 	page_dict_cache = results
 
