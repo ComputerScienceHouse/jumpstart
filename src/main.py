@@ -19,8 +19,7 @@ from contextlib import asynccontextmanager
 from config import BASE_DIR
 
 from api import endpoints
-from core import wikithoughts
-from src.core import cshcalendar
+from core import wikithoughts, cshcalendar
 
 logger: Logger = getLogger(__name__)
 

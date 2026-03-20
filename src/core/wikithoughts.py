@@ -123,7 +123,7 @@ async def auth_bot() -> None:
 
 
 def headers_formatting(
-	new_etag: str | None, new_last_modified: str | None
+	new_etag: str | None = None, new_last_modified: str | None = None
 ) -> dict[str, str]:
 	global etag, last_modifed
 
@@ -164,10 +164,13 @@ def process_category_page(response: httpx.Response) -> tuple[list[str], bool | s
 
 		# Loop to keep everything going
 		if "continue" in r_json:
-			return r_json["continue"]["cmcontinue"]
+			return (titles,r_json["continue"]["cmcontinue"])
+		
+		return (titles,False)
 	else:
 		logger.warning(f"Failure in obtaining info, JSON:\n{r_json}")
-		return titles, False
+		return (titles, False)
+	
 
 
 async def refresh_category_pages() -> list[str]:
@@ -183,8 +186,8 @@ async def refresh_category_pages() -> list[str]:
 	global page_title_cache, last_updated_time, queued_pages, shown_pages
 	time_now: datetime = datetime.now()
 
-	if not check_category_refresh():
-		return {}
+	if check_category_refresh(time_now):
+		return page_title_cache
 
 	titles: list[str] = []
 	params: dict[str, str] = {
@@ -211,7 +214,7 @@ async def refresh_category_pages() -> list[str]:
 			added, repeat_req = process_category_page(response=response)
 			titles += added
 
-			if repeat_req in (None, False, ""):
+			if repeat_req not in (None, False, ""):
 				params["cmcontinue"] = repeat_req
 				continue
 			break
