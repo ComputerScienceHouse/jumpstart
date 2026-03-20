@@ -51,7 +51,7 @@ def clean_wikitext(text: str) -> str:
 
 	# [[Image: Page|Text]] -> Text
 	text = re.sub(r"\[\[Image:[^\]]*\]\]", "", text, flags=re.IGNORECASE)
-	
+
 	# [[Page|Text]] -> Text
 	text = re.sub(r"\[\[[^\|\]]*\|([^\]]+)\]\]", r"\1", text)
 
@@ -65,7 +65,7 @@ def clean_wikitext(text: str) -> str:
 	text = re.sub(r"\{\{.*?\}\}", "", text, flags=re.DOTALL)
 
 	# Remove HTML tags
-	text = re.sub(r'<[^>]+>', "", text)
+	text = re.sub(r"<[^>]+>", "", text)
 
 	# Remove bold/italic markup
 	text = re.sub(r"''+", "", text)
@@ -122,8 +122,10 @@ async def auth_bot() -> None:
 		logger.warning("Bot was unable to authenticate!")
 
 
-def headers_formatting(new_etag: str | None,new_last_modified:str | None) -> dict[str,str]:
-	global etag,last_modifed
+def headers_formatting(
+	new_etag: str | None, new_last_modified: str | None
+) -> dict[str, str]:
+	global etag, last_modifed
 
 	headers = {}
 
@@ -141,18 +143,19 @@ def headers_formatting(new_etag: str | None,new_last_modified:str | None) -> dic
 	return headers
 
 
-def check_category_refresh(update_time:datetime) -> bool:
+def check_category_refresh(update_time: datetime) -> bool:
 	if not bot_authenticated:
 		logger.warning("Bot is not authenticated, cancelling fetch of category pages")
 		return False
-	
+
 	return (
 		len(page_title_cache) > 0
 		and last_updated_time
 		and update_time < last_updated_time + timedelta(minutes=10)
 	)
 
-def process_category_page(response: httpx.Response) -> tuple[list[str],bool | str]:
+
+def process_category_page(response: httpx.Response) -> tuple[list[str], bool | str]:
 	r_json: dict[str, str] = response.json()
 	titles: list = []
 	if "query" in r_json:
@@ -165,7 +168,8 @@ def process_category_page(response: httpx.Response) -> tuple[list[str],bool | st
 	else:
 		logger.warning(f"Failure in obtaining info, JSON:\n{r_json}")
 		return titles, False
-	
+
+
 async def refresh_category_pages() -> list[str]:
 	"""
 	Refreshes all pages of the category
@@ -176,13 +180,9 @@ async def refresh_category_pages() -> list[str]:
 	Returns:
 	    list[str]: All the page titles found in this category, None if the bot is not authorized
 	"""
-	global \
-		page_title_cache, \
-		last_updated_time, \
-		queued_pages, \
-		shown_pages
+	global page_title_cache, last_updated_time, queued_pages, shown_pages
 	time_now: datetime = datetime.now()
-	
+
 	if not check_category_refresh():
 		return {}
 
@@ -208,13 +208,13 @@ async def refresh_category_pages() -> list[str]:
 
 		elif response.status_code == 200:
 			headers_formatting(etag, last_modifed)
-			added,repeat_req = process_category_page(response=response)
+			added, repeat_req = process_category_page(response=response)
 			titles += added
 
-			if repeat_req in (None,False, ""):
+			if repeat_req in (None, False, ""):
 				params["cmcontinue"] = repeat_req
 				continue
-			break	
+			break
 		else:
 			logger.warning("Failed to update the CSH wiki page!")
 			return page_title_cache
@@ -319,7 +319,7 @@ async def get_next_display() -> dict[str, str]:
 			"content": "ERROR FETCHING CONTENT",
 		}
 		return current_page
-	
+
 	elif queue_empty:
 		reset_queues()
 		queue_empty = False

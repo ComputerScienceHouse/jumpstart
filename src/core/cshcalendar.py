@@ -40,6 +40,8 @@ DAY = 86400
 WEEK = 604800
 
 BORDER_STRING = "<hr style='border: 1px #B0197E solid;'>"
+
+
 # Automatically format all info into the class
 class CalendarInfo:
 	"""
