@@ -44,13 +44,14 @@ def clean_wikitext(text: str) -> str:
 	"""
 
 	# [https... Text] -> Text
-	text = re.sub(r"\[https?:\/\/\S+\s+\"?([^\]\"]+)\"?\]", r"\1", text)
+	text = re.sub(r'\[https?://[^\s"]+\s+"?([^\]"]+)"?\]', r"\1", text)
 
 	# [[File: Page|Text]] → Text
 	text = re.sub(r"\[\[File:[^\]]*\]\]", "", text, flags=re.IGNORECASE)
 
 	# [[Image: Page|Text]] -> Text
 	text = re.sub(r"\[\[Image:[^\]]*\]\]", "", text, flags=re.IGNORECASE)
+	
 	# [[Page|Text]] -> Text
 	text = re.sub(r"\[\[[^\|\]]*\|([^\]]+)\]\]", r"\1", text)
 
@@ -64,7 +65,7 @@ def clean_wikitext(text: str) -> str:
 	text = re.sub(r"\{\{.*?\}\}", "", text, flags=re.DOTALL)
 
 	# Remove HTML tags
-	text = re.sub(r"<.*?>", "", text)
+	text = re.sub(r'<[^>]+>', "", text)
 
 	# Remove bold/italic markup
 	text = re.sub(r"''+", "", text)
@@ -121,6 +122,50 @@ async def auth_bot() -> None:
 		logger.warning("Bot was unable to authenticate!")
 
 
+def headers_formatting(new_etag: str | None,new_last_modified:str | None) -> dict[str,str]:
+	global etag,last_modifed
+
+	headers = {}
+
+	if new_etag:
+		etag = new_etag
+
+	if new_last_modified:
+		last_modifed = new_last_modified
+
+	if etag:
+		headers["If-None-Match"] = etag
+	if last_modifed:
+		headers["If-Modified-Since"] = last_modifed
+
+	return headers
+
+
+def check_category_refresh(update_time:datetime) -> bool:
+	if not bot_authenticated:
+		logger.warning("Bot is not authenticated, cancelling fetch of category pages")
+		return False
+	
+	return (
+		len(page_title_cache) > 0
+		and last_updated_time
+		and update_time < last_updated_time + timedelta(minutes=10)
+	)
+
+def process_category_page(response: httpx.Response) -> tuple[list[str],bool | str]:
+	r_json: dict[str, str] = response.json()
+	titles: list = []
+	if "query" in r_json:
+		for page in r_json["query"]["categorymembers"]:
+			titles.append(page["title"])
+
+		# Loop to keep everything going
+		if "continue" in r_json:
+			return r_json["continue"]["cmcontinue"]
+	else:
+		logger.warning(f"Failure in obtaining info, JSON:\n{r_json}")
+		return titles, False
+	
 async def refresh_category_pages() -> list[str]:
 	"""
 	Refreshes all pages of the category
@@ -134,22 +179,12 @@ async def refresh_category_pages() -> list[str]:
 	global \
 		page_title_cache, \
 		last_updated_time, \
-		etag, \
-		last_modifed, \
 		queued_pages, \
 		shown_pages
-
-	if not bot_authenticated:
-		logger.warning("Bot is not authenticated, cancelling fetch of category pages")
-		return
-
 	time_now: datetime = datetime.now()
-	if (
-		len(page_title_cache) > 0
-		and last_updated_time
-		and time_now < last_updated_time + timedelta(minutes=10)
-	):
-		return
+	
+	if not check_category_refresh():
+		return {}
 
 	titles: list[str] = []
 	params: dict[str, str] = {
@@ -160,16 +195,9 @@ async def refresh_category_pages() -> list[str]:
 		"format": "json",
 	}
 
-	headers: dict[str, str] = {}
+	headers: dict[str, str] = headers_formatting()
 	# This needs to loop due to mediawiki limitations
 	while True:
-		if not "cmcontinue" in params:
-			if etag:
-				headers["If-None-Match"] = etag
-			if last_modifed:
-				headers["If-Modified-Since"] = last_modifed
-		else:
-			headers = {}
 		response: httpx.Response = await client.get(
 			WIKI_API, params=params, headers=headers
 		)
@@ -179,22 +207,14 @@ async def refresh_category_pages() -> list[str]:
 			return page_title_cache
 
 		elif response.status_code == 200:
-			etag = response.headers.get("ETag")
-			last_modifed = response.headers.get("Last-Modified")
+			headers_formatting(etag, last_modifed)
+			added,repeat_req = process_category_page(response=response)
+			titles += added
 
-			r_json: dict[str, str] = response.json()
-			if "query" in r_json:
-				for page in r_json["query"]["categorymembers"]:
-					titles.append(page["title"])
-
-				# Loop to keep everything going
-				if "continue" in r_json:
-					params["cmcontinue"] = r_json["continue"]["cmcontinue"]
-				else:
-					break
-			else:
-				logger.warning(f"Failure in obtaining info, JSON:\n{r_json}")
-				break
+			if repeat_req in (None,False, ""):
+				params["cmcontinue"] = repeat_req
+				continue
+			break	
 		else:
 			logger.warning("Failed to update the CSH wiki page!")
 			return page_title_cache
@@ -202,6 +222,7 @@ async def refresh_category_pages() -> list[str]:
 	last_updated_time = time_now
 	page_title_cache = titles
 	queued_pages = titles.copy()
+
 	random.shuffle(queued_pages)
 	shown_pages = []
 
@@ -217,7 +238,7 @@ async def refresh_page_dictionary() -> None:
 	global page_dict_cache, page_title_cache
 
 	if not page_title_cache:
-		return {}
+		return
 
 	results: dict[str, str] = {}
 	tasks: list = []
@@ -297,7 +318,8 @@ async def get_next_display() -> dict[str, str]:
 			"page": "ERROR GETTING PAGE",
 			"content": "ERROR FETCHING CONTENT",
 		}
-		return
+		return current_page
+	
 	elif queue_empty:
 		reset_queues()
 		queue_empty = False

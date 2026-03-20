@@ -2,7 +2,6 @@ from logging import getLogger, Logger
 from datetime import datetime, date, timedelta, time
 from zoneinfo import ZoneInfo
 
-# from icalendar import Calendar
 from icalendar.cal import Event, Calendar
 import httpx
 import recurring_ical_events
@@ -40,7 +39,7 @@ HOUR = 3600
 DAY = 86400
 WEEK = 604800
 
-
+BORDER_STRING = "<hr style='border: 1px #B0197E solid;'>"
 # Automatically format all info into the class
 class CalendarInfo:
 	"""
@@ -141,11 +140,11 @@ def format_events(events: tuple[CalendarInfo]) -> dict[str, str]:
 	final_events: str = "<br>"
 
 	if not events:
-		final_events += "<hr style='border: 1px #B0197E solid;'>"
+		final_events += BORDER_STRING
 
 		final_events += calendar_to_html(":(", "No Events on the Calendar")
 
-		final_events += "<hr style='border: 1px #B0197E solid;'>"
+		final_events += BORDER_STRING
 
 		return {"data": final_events}
 
@@ -163,7 +162,7 @@ def format_events(events: tuple[CalendarInfo]) -> dict[str, str]:
 				time_humanizer(current_date, event.date), event.name
 			)
 
-		final_events += "<hr style='border: 1px #B0197E solid;'>"
+		final_events += BORDER_STRING
 	return {"data": final_events}
 
 
@@ -283,7 +282,7 @@ async def get_future_events() -> list[CalendarInfo]:
 
 		if cal_correct_length:
 			logger.info("Calendar cache is full length, rebuilding async!")
-			running_task = asyncio.create_task(
+			asyncio.create_task(
 				rebuild_calendar()
 			)  # Calendar is correct length, we can just run this in the background
 			# Make it a variable for GC purposes? idk sonarqube told me to do it
@@ -306,6 +305,5 @@ async def close_client() -> None:
 	try:
 		await cshcal_client.aclose()
 		logger.info("Succesfully closed the cshcal client")
-	except RuntimeError as e:
+	except RuntimeError:
 		logger.warning("EVENT LOOP HAS ALREADY CLOSED, FAILED TO CLOSE csh_cal")
-	return
