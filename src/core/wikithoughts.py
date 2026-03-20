@@ -2,6 +2,7 @@ import httpx
 import asyncio
 from datetime import datetime, timedelta
 from itertools import islice
+from typing import Pattern
 from config import WIKIBOT_PASSWORD, WIKIBOT_USER, WIKI_CATEGORY, WIKI_API
 import logging
 import random
@@ -32,6 +33,18 @@ current_page: dict[str, str] = {"page": "NA", "content": "NA"}
 page_last_updated: datetime | None = None
 
 
+# Precompile all the Regex operations
+RE_LINK: Pattern[str] = re.compile(r'\[https?://[^\s"]+\s+"?([^\]"]+)"?\]')
+RE_FILE: Pattern[str] = re.compile(r"\[\[File:[^\]]*\]\]", re.IGNORECASE)
+RE_IMAGE: Pattern[str] = re.compile(r"\[\[Image:[^\]]*\]\]", re.IGNORECASE)
+RE_PAGE_TEXT: Pattern[str] = re.compile(r"\[\[[^\|\]]*\|([^\]]+)\]\]")
+RE_PAGE: Pattern[str] = re.compile(r"\[\[([^\]]+)\]\]")
+RE_CSH: Pattern[str] = re.compile(r"\^\^([^\]]+)\^\^")
+RE_TEMPLATE: Pattern[str] = re.compile(r"\{\{.*?\}\}", re.DOTALL)
+RE_HTML: Pattern[str] = re.compile(r"<[^>]+>")
+RE_BOLD_ITALIC: Pattern[str] = re.compile(r"''+")
+
+
 def clean_wikitext(text: str) -> str:
 	"""
 	Function for cleaning markdown text using regex commands
@@ -42,34 +55,15 @@ def clean_wikitext(text: str) -> str:
 	Returns:
 		str: The cleaned up text string
 	"""
-
-	# [https... Text] -> Text
-	text = re.sub(r'\[https?://[^\s"]+\s+"?([^\]"]+)"?\]', r"\1", text)
-
-	# [[File: Page|Text]] → Text
-	text = re.sub(r"\[\[File:[^\]]*\]\]", "", text, flags=re.IGNORECASE)
-
-	# [[Image: Page|Text]] -> Text
-	text = re.sub(r"\[\[Image:[^\]]*\]\]", "", text, flags=re.IGNORECASE)
-
-	# [[Page|Text]] -> Text
-	text = re.sub(r"\[\[[^\|\]]*\|([^\]]+)\]\]", r"\1", text)
-
-	# [[Page]] -> Page
-	text = re.sub(r"\[\[([^\]]+)\]\]", r"\1", text)
-
-	# ^^CSH Account^^ -> User CSH Account
-	text = re.sub(r"\^\^([^\]]+)\^\^", r"User \1", text)
-
-	# Remove templates {{...}}
-	text = re.sub(r"\{\{.*?\}\}", "", text, flags=re.DOTALL)
-
-	# Remove HTML tags
-	text = re.sub(r"<[^>]+>", "", text)
-
-	# Remove bold/italic markup
-	text = re.sub(r"''+", "", text)
-
+	text = RE_LINK.sub(r"\1", text)  # [https://... "Text"] -> Text
+	text = RE_FILE.sub("", text)  # [[File:...]] -> removed
+	text = RE_IMAGE.sub("", text)  # [[Image:...]] -> removed
+	text = RE_PAGE_TEXT.sub(r"\1", text)  # [[Page|Text]] -> Text
+	text = RE_PAGE.sub(r"\1", text)  # [[Page]] -> Page
+	text = RE_CSH.sub(r"User \1", text)  # ^^CSH^^ -> User CSH
+	text = RE_TEMPLATE.sub("", text)  # {{...}} -> removed
+	text = RE_HTML.sub("", text)  # <tag> -> removed
+	text = RE_BOLD_ITALIC.sub("", text)  # '' or ''' -> removed
 	return text.strip()
 
 
@@ -125,9 +119,19 @@ async def auth_bot() -> None:
 def headers_formatting(
 	new_etag: str | None = None, new_last_modified: str | None = None
 ) -> dict[str, str]:
+	"""
+	Formats and returns a header file for a wikithought request
+
+	Args:
+		new_etag(str | None): The optional new etag to be globalized
+		new_last_modified(str | None): The optional new last modified to be globalized
+
+	Returns:
+		dict[str,str]: The new headers to be applied
+	"""
 	global etag, last_modifed
 
-	headers = {}
+	headers: dict[str, str] = {}
 
 	if new_etag:
 		etag = new_etag
@@ -143,12 +147,22 @@ def headers_formatting(
 	return headers
 
 
-def check_category_refresh(update_time: datetime) -> bool:
+def needs_category_refresh(update_time: datetime) -> bool:
+	"""
+	Verifys if the wikithoughts needs to be updated, checking bot status, cache and time
+
+	Args:
+		update_time (datetime): The datetime to be compared against the cache
+
+	Returns:
+		boolean: if the cache needs to be refreshed
+	"""
+
 	if not bot_authenticated:
 		logger.warning("Bot is not authenticated, cancelling fetch of category pages")
 		return False
 
-	return (
+	return not (
 		len(page_title_cache) > 0
 		and last_updated_time
 		and update_time < last_updated_time + timedelta(minutes=10)
@@ -156,6 +170,15 @@ def check_category_refresh(update_time: datetime) -> bool:
 
 
 def process_category_page(response: httpx.Response) -> tuple[list[str], bool | str]:
+	"""
+	Processes a wikithoughts response into a list of title pages
+
+	Args:
+		respone (httpx.Response): The response from the wiki to be processed
+
+	Returns:
+		tuple[list[str], bool | str]: The list of titles from the request, along with a possible continutation if needed
+	"""
 	r_json: dict[str, str] = response.json()
 	titles: list = []
 	if "query" in r_json:
@@ -164,13 +187,12 @@ def process_category_page(response: httpx.Response) -> tuple[list[str], bool | s
 
 		# Loop to keep everything going
 		if "continue" in r_json:
-			return (titles,r_json["continue"]["cmcontinue"])
-		
-		return (titles,False)
+			return (titles, r_json["continue"]["cmcontinue"])
+
+		return (titles, False)
 	else:
 		logger.warning(f"Failure in obtaining info, JSON:\n{r_json}")
 		return (titles, False)
-	
 
 
 async def refresh_category_pages() -> list[str]:
@@ -186,7 +208,8 @@ async def refresh_category_pages() -> list[str]:
 	global page_title_cache, last_updated_time, queued_pages, shown_pages
 	time_now: datetime = datetime.now()
 
-	if check_category_refresh(time_now):
+	if not needs_category_refresh(time_now):
+		logger.warning("IT DONT NEEDA UPDATE!")
 		return page_title_cache
 
 	titles: list[str] = []
@@ -205,6 +228,7 @@ async def refresh_category_pages() -> list[str]:
 			WIKI_API, params=params, headers=headers
 		)
 
+		logger.warning(response.status_code)
 		if response.status_code == 304:
 			last_updated_time = time_now
 			return page_title_cache
@@ -214,9 +238,12 @@ async def refresh_category_pages() -> list[str]:
 			added, repeat_req = process_category_page(response=response)
 			titles += added
 
+			logger.warning(titles)
+			logger.warning(repeat_req)
 			if repeat_req not in (None, False, ""):
 				params["cmcontinue"] = repeat_req
 				continue
+			logger.warning("IOBGIBOGROBIOBIOBI")
 			break
 		else:
 			logger.warning("Failed to update the CSH wiki page!")
@@ -236,7 +263,6 @@ async def refresh_category_pages() -> list[str]:
 async def refresh_page_dictionary() -> None:
 	"""
 	Fetches the pages based off the cache of page titles, and updates the page cache accordingly
-
 	"""
 	global page_dict_cache, page_title_cache
 

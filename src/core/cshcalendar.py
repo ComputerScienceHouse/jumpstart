@@ -6,6 +6,7 @@ from icalendar.cal import Event, Calendar
 import httpx
 import recurring_ical_events
 import arrow
+import re
 
 from config import (
 	CALENDAR_CACHE_REFRESH,
@@ -34,12 +35,27 @@ logger.info("Starting up the calendar service!")
 cshcal_client = httpx.AsyncClient()
 
 # Conversion from seconds
-MINUTE = 60
-HOUR = 3600
-DAY = 86400
-WEEK = 604800
+MINUTE: int = 60
+HOUR: int = MINUTE * 60
+DAY: int = HOUR * 24
+WEEK: int = DAY * 7
 
-BORDER_STRING = "<hr style='border: 1px #B0197E solid;'>"
+"""
+This is used for each "check" from the time humanizer. %TIME% will be replaced with a rounded
+WARNING: PERCENTAGE SIGNS WILL TRIGGER A REGEX OPERATION
+WARNING: FOLLOW INSERTION ORDER
+"""
+HUMANIZER_CHECKS: dict[int, str] = {
+	MINUTE: "In 1 Minute",
+	(HOUR - MINUTE): f"In %{MINUTE}% Minutes",
+	(HOUR * 1.5): "In 1 Hour",
+	(DAY - HOUR): f"In %{HOUR}% Hours",
+	(DAY * 1.33): "In 1 Day",
+	(WEEK - DAY): f"In %{DAY}% Days",
+}
+
+BORDER_STRING: str = "<hr style='border: 1px #B0197E solid;'>"
+TIME_PATTERN = re.compile(r"%([^%]+)%")
 
 
 # Automatically format all info into the class
@@ -73,10 +89,17 @@ def ceil_division(num: int, den: int) -> int:
 	Returns:
 		int: the result of the operation
 	"""
-	return int((num + den - 1) // den)
+	return (num + den - 1) // den
 
 
 def time_humanizer(current_time: datetime, event_time: datetime) -> str:
+	def repl(match: re.Match[str]) -> str:
+		"""
+		Replaces
+		"""
+		num = int(match.group(1))
+		return str(round(time_before_event / num))
+
 	"""
 	Custom humanizer for text to be displayed
 
@@ -86,23 +109,21 @@ def time_humanizer(current_time: datetime, event_time: datetime) -> str:
 	Returns:
 		str: The humanized time as a string
 	"""
-
 	time_before_event: int = (event_time - current_time).total_seconds()
 
-	if time_before_event < HOUR - MINUTE:
-		if time_before_event < MINUTE:
-			return "In 1 Minute"
-		return f"In {round(time_before_event / MINUTE)} Minutes"
-	elif time_before_event < DAY - HOUR:
-		if time_before_event < (HOUR * 1.5):
-			return "In 1 Hour"
-		return f"In {round(time_before_event / HOUR)} Hours"
-	elif time_before_event < WEEK - DAY:
-		if time_before_event < (DAY * 1.33):
-			return "In 1 Day"
-		return f"In {ceil_division(time_before_event, DAY)} Days"
+	if time_before_event > WEEK:
+		return "Over a Week Away"
 
-	return "Over a Week Away"
+	found_key: int = 0
+	for key in HUMANIZER_CHECKS.keys():
+		if time_before_event < key:
+			found_key = key
+			break
+
+	formatted_string: str = HUMANIZER_CHECKS.get(found_key, "oops?")
+	formatted_string = TIME_PATTERN.sub(repl, formatted_string)
+
+	return formatted_string
 
 
 def calendar_to_html(seg_header: str, seg_content: str) -> str:
