@@ -93,13 +93,6 @@ def ceil_division(num: int, den: int) -> int:
 
 
 def time_humanizer(current_time: datetime, event_time: datetime) -> str:
-	def repl(match: re.Match[str]) -> str:
-		"""
-		Replaces
-		"""
-		num = int(match.group(1))
-		return str(round(time_before_event / num))
-
 	"""
 	Custom humanizer for text to be displayed
 
@@ -109,6 +102,19 @@ def time_humanizer(current_time: datetime, event_time: datetime) -> str:
 	Returns:
 		str: The humanized time as a string
 	"""
+	def repl(match: re.Match[str]) -> str:
+		"""
+		Replaces the matched group text
+
+		Args:
+			match (re.Match[str]): The matches group
+
+		Returns:
+			str: The newly formatted string
+		"""
+		num = int(match.group(1))
+		return str(round(time_before_event / num))
+
 	time_before_event: int = (event_time - current_time).total_seconds()
 
 	if time_before_event > WEEK:
