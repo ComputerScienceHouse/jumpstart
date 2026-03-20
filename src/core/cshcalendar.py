@@ -102,6 +102,7 @@ def time_humanizer(current_time: datetime, event_time: datetime) -> str:
 	Returns:
 		str: The humanized time as a string
 	"""
+
 	def repl(match: re.Match[str]) -> str:
 		"""
 		Replaces the matched group text
