@@ -121,16 +121,18 @@ def time_humanizer(current_time: datetime, event_time: datetime) -> str:
 	if time_before_event > WEEK:
 		return "Over a Week Away"
 
-	found_key: int = 0
+	unformatted_string: str = (
+		"------"  # Make this the default, incase an operation fails
+	)
+
 	for key in HUMANIZER_CHECKS.keys():
 		if time_before_event < key:
-			found_key = key
+			unformatted_string = HUMANIZER_CHECKS.get(
+				key, "Unable to find appropriate humanizer text"
+			)
 			break
 
-	formatted_string: str = HUMANIZER_CHECKS.get(found_key, "oops?")
-	formatted_string = TIME_PATTERN.sub(repl, formatted_string)
-
-	return formatted_string
+	return TIME_PATTERN.sub(repl, unformatted_string)
 
 
 def calendar_to_html(seg_header: str, seg_content: str) -> str:

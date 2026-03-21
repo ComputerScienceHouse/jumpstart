@@ -55,15 +55,32 @@ def clean_wikitext(text: str) -> str:
 	Returns:
 		str: The cleaned up text string
 	"""
-	text = RE_LINK.sub(r"\1", text)  # [https://... "Text"] -> Text
-	text = RE_FILE.sub("", text)  # [[File:...]] -> removed
-	text = RE_IMAGE.sub("", text)  # [[Image:...]] -> removed
-	text = RE_PAGE_TEXT.sub(r"\1", text)  # [[Page|Text]] -> Text
-	text = RE_PAGE.sub(r"\1", text)  # [[Page]] -> Page
-	text = RE_CSH.sub(r"User \1", text)  # ^^CSH^^ -> User CSH
-	text = RE_TEMPLATE.sub("", text)  # {{...}} -> removed
-	text = RE_HTML.sub("", text)  # <tag> -> removed
-	text = RE_BOLD_ITALIC.sub("", text)  # '' or ''' -> removed
+
+	reg_operations: tuple[Pattern[str]] = (
+		RE_LINK,
+		RE_FILE,
+		RE_IMAGE,
+		RE_PAGE_TEXT,
+		RE_PAGE,
+		RE_CSH,
+		RE_TEMPLATE,
+		RE_HTML,
+		RE_BOLD_ITALIC,
+	)
+
+	for operation in reg_operations:
+		swap_text: str = ""
+		if operation in (
+			RE_LINK,
+			RE_PAGE,
+			RE_PAGE_TEXT,
+		):  # Keep text inbetween the anchors
+			swap_text = r"\1"
+		elif operation == (RE_CSH):  # Add user infront of the CSH user
+			swap_text = r"User \1"
+
+		text = operation.sub(swap_text, text)
+
 	return text.strip()
 
 
@@ -209,7 +226,6 @@ async def refresh_category_pages() -> list[str]:
 	time_now: datetime = datetime.now()
 
 	if not needs_category_refresh(time_now):
-		logger.warning("IT DONT NEEDA UPDATE!")
 		return page_title_cache
 
 	titles: list[str] = []
@@ -228,7 +244,6 @@ async def refresh_category_pages() -> list[str]:
 			WIKI_API, params=params, headers=headers
 		)
 
-		logger.warning(response.status_code)
 		if response.status_code == 304:
 			last_updated_time = time_now
 			return page_title_cache
@@ -238,12 +253,9 @@ async def refresh_category_pages() -> list[str]:
 			added, repeat_req = process_category_page(response=response)
 			titles += added
 
-			logger.warning(titles)
-			logger.warning(repeat_req)
 			if repeat_req not in (None, False, ""):
 				params["cmcontinue"] = repeat_req
 				continue
-			logger.warning("IOBGIBOGROBIOBIOBI")
 			break
 		else:
 			logger.warning("Failed to update the CSH wiki page!")
@@ -313,7 +325,7 @@ def reset_queues() -> None:
 	Swaps Queued and Shown pages queued
 	"""
 	global queued_pages, shown_pages
-	logger.warning("RESETING QUEUES FOR WIKITHOUGHTS")
+	logger.info("RESETING QUEUES FOR WIKITHOUGHTS")
 	if len(queued_pages) > 0:
 		return
 
@@ -342,7 +354,7 @@ async def get_next_display() -> dict[str, str]:
 
 	queue_empty: bool = len(queued_pages) == 0
 	if queue_empty and len(shown_pages) == 0:
-		logger.warning("ERROR?!?")
+		logger.warning("Error, queue and shown pages are both empty!")
 		current_page = {
 			"page": "ERROR GETTING PAGE",
 			"content": "ERROR FETCHING CONTENT",
