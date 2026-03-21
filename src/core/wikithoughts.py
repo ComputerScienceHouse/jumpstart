@@ -197,7 +197,7 @@ def process_category_page(response: httpx.Response) -> tuple[list[str], bool | s
 		tuple[list[str], bool | str]: The list of titles from the request, along with a possible continutation if needed
 	"""
 	r_json: dict[str, str] = response.json()
-	titles: list = []
+	titles: list[str] = []
 	if "query" in r_json:
 		for page in r_json["query"]["categorymembers"]:
 			titles.append(page["title"])

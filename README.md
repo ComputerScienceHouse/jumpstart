@@ -8,8 +8,11 @@
 A graphical interface that displays information in the elevator lobby of Computer Science House.
 All information displayed has been authorized to been shown.
 
+Documentation for the project can be found be appended /docs to the url
+All HTML requests that are sent in the project can be seen by appending /swag
+
 This project uses Python, [FastAPI](https://fastapi.tiangolo.com/), HTML/CSS, and Javascript. 
-See it live [here](http://jumpstart-squared.cs.house/)!
+See it live [here](http://jumpstart-cubed.cs.house/)!
 
 ## Installing
 1. Clone and cd into the repo: git clone https://github.com/WeatherGod3218/jumpstartV2
@@ -21,7 +24,10 @@ See it live [here](http://jumpstart-squared.cs.house/)!
 2. Copy the .env.template file, rename it to .env and place it in the root folder
 3. Ask an RTP for jumpstart secrets, add them to the .env accordingly
 
-## Run 
+## Run
+
+Jumpstart is containerized through a docker file.
+
 1. Build the docker file
 ```
     docker build -t Jumpstart .
@@ -31,7 +37,11 @@ See it live [here](http://jumpstart-squared.cs.house/)!
     docker run -p 8080:80 Jumpstart
 ```
 
-## Alternatively, you can run the docker compose file as well
+## Docker Compose
+
+Jumpstart also has support for Docker Compose, a extended version of docker that simplifies the steps.
+
+(This is a really cool thing! If you use docker often, check it out!)
 ```
     docker compose up
 ```

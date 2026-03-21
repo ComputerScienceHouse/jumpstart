@@ -18,7 +18,7 @@ The application has multiple features:
 
  3. A spot for announcements, which E-Board members can make through our Slack. This is done using a custom Slack app that utilizes Slack’s APIs.
 
- 4. A section that displays a random title from r/showerthoughts every 30 seconds.
+ 4. A section that displays a CSH wiki page for 20 seconds
 
  5. An informational that displays real-time status information from CSH’s server room.
 
