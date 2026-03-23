@@ -2,11 +2,11 @@ from logging import getLogger, Logger
 from datetime import datetime, date, timedelta, time
 from zoneinfo import ZoneInfo
 
-# from icalendar import Calendar
 from icalendar.cal import Event, Calendar
 import httpx
 import recurring_ical_events
 import arrow
+import re
 
 from config import (
 	CALENDAR_CACHE_REFRESH,
@@ -34,6 +34,29 @@ logger: Logger = getLogger(__name__)
 logger.info("Starting up the calendar service!")
 cshcal_client = httpx.AsyncClient()
 
+# Conversion from seconds
+MINUTE: int = 60
+HOUR: int = MINUTE * 60
+DAY: int = HOUR * 24
+WEEK: int = DAY * 7
+
+"""
+This is used for each "check" from the time humanizer. %TIME% will be replaced with a rounded
+WARNING: PERCENTAGE SIGNS WILL TRIGGER A REGEX OPERATION
+WARNING: FOLLOW INSERTION ORDER
+"""
+HUMANIZER_CHECKS: dict[int, str] = {
+	MINUTE: "In 1 Minute",
+	(HOUR - MINUTE): f"In %{MINUTE}% Minutes",
+	(HOUR * 1.5): "In 1 Hour",
+	(DAY - HOUR): f"In %{HOUR}% Hours",
+	(DAY * 1.33): "In 1 Day",
+	(WEEK - DAY): f"In %{DAY}% Days",
+}
+
+BORDER_STRING: str = "<hr style='border: 1px #B0197E solid;'>"
+TIME_PATTERN = re.compile(r"%([^%]+)%")
+
 
 # Automatically format all info into the class
 class CalendarInfo:
@@ -54,6 +77,62 @@ class CalendarInfo:
 
 	def __hash__(self):
 		return hash((self.name, self.date))
+
+
+def ceil_division(num: int, den: int) -> int:
+	"""
+	Returns a ceiling division of the two numbers
+	Args:
+		num (int): the numerator
+		den (int): the denominator
+
+	Returns:
+		int: the result of the operation
+	"""
+	return (num + den - 1) // den
+
+
+def time_humanizer(current_time: datetime, event_time: datetime) -> str:
+	"""
+	Custom humanizer for text to be displayed
+
+	Args:
+		current_time (datetime): The current time to be judged off of
+		event_time (datetime): The events time to be factored
+	Returns:
+		str: The humanized time as a string
+	"""
+
+	def repl(match: re.Match[str]) -> str:
+		"""
+		Replaces the matched group text
+
+		Args:
+			match (re.Match[str]): The matches group
+
+		Returns:
+			str: The newly formatted string
+		"""
+		num = int(match.group(1))
+		return str(round(time_before_event / num))
+
+	time_before_event: int = (event_time - current_time).total_seconds()
+
+	if time_before_event > WEEK:
+		return "Over a Week Away"
+
+	unformatted_string: str = (
+		"------"  # Make this the default, incase an operation fails
+	)
+
+	for key in HUMANIZER_CHECKS.keys():
+		if time_before_event < key:
+			unformatted_string = HUMANIZER_CHECKS.get(
+				key, "Unable to find appropriate humanizer text"
+			)
+			break
+
+	return TIME_PATTERN.sub(repl, unformatted_string)
 
 
 def calendar_to_html(seg_header: str, seg_content: str) -> str:
@@ -93,11 +172,11 @@ def format_events(events: tuple[CalendarInfo]) -> dict[str, str]:
 	final_events: str = "<br>"
 
 	if not events:
-		final_events += "<hr style='border: 1px #B0197E solid;'>"
+		final_events += BORDER_STRING
 
 		final_events += calendar_to_html(":(", "No Events on the Calendar")
 
-		final_events += "<hr style='border: 1px #B0197E solid;'>"
+		final_events += BORDER_STRING
 
 		return {"data": final_events}
 
@@ -111,9 +190,11 @@ def format_events(events: tuple[CalendarInfo]) -> dict[str, str]:
 			)
 			final_events += calendar_to_html(formatted, event.name)
 		else:
-			final_events += calendar_to_html(event.date.humanize().title(), event.name)
+			final_events += calendar_to_html(
+				time_humanizer(current_date, event.date), event.name
+			)
 
-		final_events += "<hr style='border: 1px #B0197E solid;'>"
+		final_events += BORDER_STRING
 	return {"data": final_events}
 
 
@@ -233,7 +314,7 @@ async def get_future_events() -> list[CalendarInfo]:
 
 		if cal_correct_length:
 			logger.info("Calendar cache is full length, rebuilding async!")
-			running_task = asyncio.create_task(
+			asyncio.create_task(
 				rebuild_calendar()
 			)  # Calendar is correct length, we can just run this in the background
 			# Make it a variable for GC purposes? idk sonarqube told me to do it
@@ -256,6 +337,5 @@ async def close_client() -> None:
 	try:
 		await cshcal_client.aclose()
 		logger.info("Succesfully closed the cshcal client")
-	except RuntimeError as e:
+	except RuntimeError:
 		logger.warning("EVENT LOOP HAS ALREADY CLOSED, FAILED TO CLOSE csh_cal")
-	return
