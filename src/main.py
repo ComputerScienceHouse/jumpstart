@@ -72,4 +72,4 @@ logger.info("Finished setting up the application!")
 
 @app.get("/", response_class=HTMLResponse)
 async def read_index(request: Request):
-	return templates.TemplateResponse("index.html", {"request": request})
+	return templates.TemplateResponse(name="index.html", request=request)
