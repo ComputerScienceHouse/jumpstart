@@ -8,7 +8,7 @@ import textwrap
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import JSONResponse
 
-from core import slack, wikithoughts, cshcalendar
+from core import slack, cshcalendar, wikithoughts
 from config import WATCHED_CHANNELS
 
 logger: Logger = getLogger(__name__)
@@ -74,7 +74,7 @@ async def slack_events(request: Request) -> JSONResponse:
 		if event.get("subtype", None) is not None:
 			return JSONResponse({"status": "ignored"})
 
-		if event not in WATCHED_CHANNELS:
+		if not event.get("channel", "") in WATCHED_CHANNELS:
 			return JSONResponse({"status": "ignored"})
 
 		await slack.request_upload_via_dm(event.get("user", ""), cleaned_text)
@@ -107,11 +107,9 @@ async def message_actions(payload: str = Form(...)) -> JSONResponse:
 		if slack.convert_user_response_to_bool(form_json):
 			logger.info("User approved the announcement!")
 			logger.info(f"{form_json}\n\n")
-			message_object: dict[str, dict] = json.loads(
-				form_json.get("actions", [{}])[0].get("value", '{text:""}')
-			).get("text", None)
-			logger.info(f"Display Object {message_object}")
-			slack.add_announcement(message_object)
+			messageObject = json.loads(form_json.get("actions",[{}])[0].get("value",'{text:""}')).get("text",None)
+			logger.info(f"Display Object {messageObject}")
+			slack.add_announcement(messageObject)
 
 			if response_url:
 				await httpx.post(

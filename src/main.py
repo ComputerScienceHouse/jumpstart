@@ -14,12 +14,13 @@ from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse, HTMLResponse
+
 from contextlib import asynccontextmanager
 
 from config import BASE_DIR
 
 from api import endpoints
-from core import wikithoughts, cshcalendar
+from core import cshcalendar, wikithoughts
 
 logger: Logger = getLogger(__name__)
 

@@ -24,7 +24,7 @@ WIKIBOT_PASSWORD: str | None = os.getenv("WIKIBOT_PASSWORD", None)
 WIKI_CATEGORY: str = os.getenv("WIKI_CATEGORY", "JobAdvice")
 
 if SLACK_API_TOKEN in (None, ""):
-	raise ValueError("Missing SLACK_API_TOKEN")
+	raise Exception("Missing SLACK_API_TOKEN")
 
 with open(os.path.join(BASE_DIR, "static", "slack", "dm_request_template.json")) as f:
 	SLACK_DM_TEMPLATE = json.load(f)
