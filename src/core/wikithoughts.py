@@ -15,6 +15,7 @@ HEADERS: dict[str, str] = {"User-Agent": "JumpstartFetcher/1.0"}
 AUTH: tuple[str] = (WIKIBOT_USER, WIKIBOT_PASSWORD)
 
 client: httpx.AsyncClient = httpx.AsyncClient(headers=HEADERS, auth=AUTH)
+
 logger: logging.Logger = logging.getLogger(__name__)
 
 bot_authenticated: bool = False
@@ -130,6 +131,7 @@ async def auth_bot() -> None:
 		bot_authenticated = True
 		logger.info("Bot was authenticated successfully!")
 	else:
+		bot_authenticated = False
 		logger.warning("Bot was unable to authenticate!")
 
 
@@ -186,7 +188,7 @@ def needs_category_refresh(update_time: datetime) -> bool:
 	)
 
 
-def process_category_page(response: httpx.Response) -> tuple[list[str], bool | str]:
+def process_category_page(r_json: dict) -> tuple[list[str], bool | str]:
 	"""
 	Processes a wikithoughts response into a list of title pages
 
@@ -196,7 +198,6 @@ def process_category_page(response: httpx.Response) -> tuple[list[str], bool | s
 	Returns:
 		tuple[list[str], bool | str]: The list of titles from the request, along with a possible continutation if needed
 	"""
-	r_json: dict[str, str] = response.json()
 	titles: list[str] = []
 	if "query" in r_json:
 		for page in r_json["query"]["categorymembers"]:
@@ -239,6 +240,8 @@ async def refresh_category_pages() -> list[str]:
 
 	headers: dict[str, str] = headers_formatting()
 	# This needs to loop due to mediawiki limitations
+
+	failed_reauthentication: False
 	while True:
 		response: httpx.Response = await client.get(
 			WIKI_API, params=params, headers=headers
@@ -250,7 +253,19 @@ async def refresh_category_pages() -> list[str]:
 
 		elif response.status_code == 200:
 			headers_formatting(etag, last_modifed)
-			added, repeat_req = process_category_page(response=response)
+			r_json: dict[str, str] = response.json()
+			
+			if "error" in r_json and r_json["error"].get("code") in ("readapidenied", "notloggedin"):
+				if failed_reauthentication:
+					logger.warning("Failed to reauthenticate the bot!")
+					return []
+				
+				logger.info(f"Both was unauthenticated, attempting to reauthenticate!")
+				await auth_bot()
+				failed_reauthentication = True
+				continue
+
+			added, repeat_req = process_category_page(r_json)
 			titles += added
 
 			if repeat_req not in (None, False, ""):
