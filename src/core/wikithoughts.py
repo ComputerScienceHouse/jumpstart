@@ -188,7 +188,7 @@ def needs_category_refresh(update_time: datetime) -> bool:
 	)
 
 
-def process_category_page(r_json: dict) -> tuple[list[str], bool | str]:
+def process_category_page(r_json: dict[str,str]) -> tuple[list[str], bool | str]:
 	"""
 	Processes a wikithoughts response into a list of title pages
 
@@ -241,7 +241,7 @@ async def refresh_category_pages() -> list[str]:
 	headers: dict[str, str] = headers_formatting()
 	# This needs to loop due to mediawiki limitations
 
-	failed_reauthentication: False
+	failed_reauthentication: bool = False
 	while True:
 		response: httpx.Response = await client.get(
 			WIKI_API, params=params, headers=headers
