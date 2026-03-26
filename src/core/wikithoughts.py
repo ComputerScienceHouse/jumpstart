@@ -10,6 +10,7 @@ import re
 
 CYCLE_DEBOUNCE_TIME = 12  # How long it takes to resfresh wiki titles
 BATCH_SIZE: int = 50  # max titles per request
+REAUTHENTICATE_ATTEMPTS = 3  # The amount of times it will attempt to re-authenticare
 
 HEADERS: dict[str, str] = {"User-Agent": "JumpstartFetcher/1.0"}
 AUTH: tuple[str] = (WIKIBOT_USER, WIKIBOT_PASSWORD)
@@ -40,7 +41,7 @@ RE_FILE: Pattern[str] = re.compile(r"\[\[File:[^\]]*\]\]", re.IGNORECASE)
 RE_IMAGE: Pattern[str] = re.compile(r"\[\[Image:[^\]]*\]\]", re.IGNORECASE)
 RE_PAGE_TEXT: Pattern[str] = re.compile(r"\[\[[^\|\]]*\|([^\]]+)\]\]")
 RE_PAGE: Pattern[str] = re.compile(r"\[\[([^\]]+)\]\]")
-RE_CSH: Pattern[str] = re.compile(r"\^\^([^\]]+)\^\^")
+RE_CSH: Pattern[str] = re.compile(r"\^\^([^^]+)\^\^")
 RE_TEMPLATE: Pattern[str] = re.compile(r"\{\{.*?\}\}", re.DOTALL)
 RE_HTML: Pattern[str] = re.compile(r"<[^>]+>")
 RE_BOLD_ITALIC: Pattern[str] = re.compile(r"''+")
@@ -90,6 +91,9 @@ def batch_iterable(iterable: list, size: int):
 	Generator function for splitting up lists into smaller lists
 	To be frank, found this online when researching about the MediaWiki API
 
+	Args:
+		iterable (list): The iterable to be split up for batches
+		size (int): the size of the batches
 	Yields:
 	    A batch split by the requested size
 	"""
@@ -174,7 +178,7 @@ def needs_category_refresh(update_time: datetime) -> bool:
 		update_time (datetime): The datetime to be compared against the cache
 
 	Returns:
-		boolean: if the cache needs to be refreshed
+		bool: if the cache needs to be refreshed
 	"""
 
 	if not bot_authenticated:
@@ -188,12 +192,12 @@ def needs_category_refresh(update_time: datetime) -> bool:
 	)
 
 
-def process_category_page(r_json: dict[str,str]) -> tuple[list[str], bool | str]:
+def process_category_page(r_json: dict[str, str]) -> tuple[list[str], bool | str]:
 	"""
 	Processes a wikithoughts response into a list of title pages
 
 	Args:
-		respone (httpx.Response): The response from the wiki to be processed
+		r_json (dict[str,str]): The JSON from the wiki to be processed
 
 	Returns:
 		tuple[list[str], bool | str]: The list of titles from the request, along with a possible continutation if needed
@@ -241,7 +245,8 @@ async def refresh_category_pages() -> list[str]:
 	headers: dict[str, str] = headers_formatting()
 	# This needs to loop due to mediawiki limitations
 
-	failed_reauthentication: bool = False
+	failed_authentication_attempts: int = 0
+
 	while True:
 		response: httpx.Response = await client.get(
 			WIKI_API, params=params, headers=headers
@@ -254,15 +259,26 @@ async def refresh_category_pages() -> list[str]:
 		elif response.status_code == 200:
 			headers_formatting(etag, last_modifed)
 			r_json: dict[str, str] = response.json()
-			
-			if "error" in r_json and r_json["error"].get("code") in ("readapidenied", "notloggedin"):
-				if failed_reauthentication:
-					logger.warning("Failed to reauthenticate the bot!")
+
+			if "error" in r_json and r_json["error"].get("code") in (
+				"readapidenied",
+				"notloggedin",
+			):
+				if failed_authentication_attempts > REAUTHENTICATE_ATTEMPTS:
+					logger.warning(
+						"Reauthenticating the wikithought bot failed, sending empty response"
+					)
 					return []
-				
+
 				logger.info(f"Both was unauthenticated, attempting to reauthenticate!")
 				await auth_bot()
-				failed_reauthentication = True
+				if not (bot_authenticated):
+					logger.warning(
+						"Failed to reauthenticate the bot! Attempt: "
+						+ failed_authentication_attempts
+					)
+
+				failed_authentication_attempts += 1
 				continue
 
 			added, repeat_req = process_category_page(r_json)
