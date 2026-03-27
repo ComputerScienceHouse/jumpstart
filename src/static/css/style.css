@@ -3,6 +3,12 @@ body{
     overflow: hidden;
 }
 
+.scroll-container::-webkit-scrollbar {
+    display: none;
+    width: 0; /* Ensures no width is reserved for the scrollbar */
+    height: 0; /* Ensures no height is reserved for the horizontal scrollbar */
+}
+
 .panel-primary{
     background: #34495e;
     border: 8px #34495e solid ;
