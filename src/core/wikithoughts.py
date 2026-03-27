@@ -8,9 +8,11 @@ import logging
 import random
 import re
 
-CYCLE_DEBOUNCE_TIME:int = 12  # How long it takes to resfresh wiki titles
+CYCLE_DEBOUNCE_TIME: int = 12  # How long it takes to resfresh wiki titles
 BATCH_SIZE: int = 50  # max titles per request
-REAUTHENTICATE_ATTEMPTS:int = 3  # The amount of times it will attempt to re-authenticare
+REAUTHENTICATE_ATTEMPTS: int = (
+	3  # The amount of times it will attempt to re-authenticare
+)
 
 HEADERS: dict[str, str] = {"User-Agent": "JumpstartFetcher/1.0"}
 AUTH: tuple[str] = (WIKIBOT_USER, WIKIBOT_PASSWORD)
