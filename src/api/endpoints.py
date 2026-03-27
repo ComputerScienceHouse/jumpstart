@@ -78,7 +78,7 @@ async def slack_events(request: Request) -> JSONResponse:
 			logger.info("SLACK EVENT: Had no subtype, ignoring it")
 			return JSONResponse({"status": "ignored"})
 
-		if event not in WATCHED_CHANNELS:
+		if event.get("channel", None) not in WATCHED_CHANNELS:
 			logger.info("SLACK EVENT: Message was not in a Watched Channel, returning!")
 			logger.info(WATCHED_CHANNELS)
 			return JSONResponse({"status": "ignored"})
