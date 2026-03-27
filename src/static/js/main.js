@@ -62,7 +62,6 @@ async function longUpdate() {
 
 async function mediumUpdate() {
     try {
-        console.log("PEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
         const [wikiRes, announcementRes] = await Promise.all([
             fetch('/api/wikithought', { method: 'GET', mode: 'cors' }),
             fetch('/api/announcement', { method: 'GET', mode: 'cors' })
