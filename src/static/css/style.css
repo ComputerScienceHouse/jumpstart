@@ -1,5 +1,6 @@
 body{
     background-image: url('/static/img/darkmodeF.png');
+    overflow: hidden;
 }
 
 .panel-primary{
