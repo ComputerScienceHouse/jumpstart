@@ -80,6 +80,7 @@ async def slack_events(request: Request) -> JSONResponse:
 
 		if event not in WATCHED_CHANNELS:
 			logger.info("SLACK EVENT: Message was not in a Watched Channel, returning!")
+			logger.info(WATCHED_CHANNELS)
 			return JSONResponse({"status": "ignored"})
 
 		logger.info("SLACK EVENT: Requesting upload via dm!")
