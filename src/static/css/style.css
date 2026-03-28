@@ -1,3 +1,40 @@
+/* Creates a default theme, but can get overwritten */
+:root {    
+    --panel-header-color: #B0197E; /* Standard color for panels header*/
+    --panel-body-color: #FFFFFF; /* text body */
+    --panel-header-text-color: #FFFFFF; /* Used for headers in panels, like Page - csh/Wikithoughts */
+    --panel-body-text-color: #FFFFFF; /* Used for the text within said panels */
+    --border-color: #34495E; /* Used for borders around elements */
+    --shadow-color: rgb(176,25,126, 0.5); /* Used for the shadow in the calendar */
+}
+
+.theme-dark {
+    --panel-header-color: #B0197E; /* Standard color for panels header*/
+    --panel-header-text-color: #FFFFFF; /* Used for headers in panels, like Page - csh/Wikithoughts */
+    --panel-body-color: #000000; /* text body */
+    --panel-body-text-color: #FFFFFF; /* Used for the text within said panels */
+    --border-color: #34495E; /* Used for borders around elements */
+    --shadow-color: rgba(255, 0, 170, 0.705); /* Used for the shadow in the calendar */
+}
+
+.theme-light {
+    --panel-header-color: #B0197E; /* Standard color for panels header*/
+    --panel-body-color: #FFFFFF; /* text body */
+    --panel-header-text-color: #FFFFFF; /* Used for headers in panels, like Page - csh/Wikithoughts */
+    --panel-body-text-color: #000000; /* Used for the text within said panels */
+    --border-color: #34495E; /* Used for borders around elements */
+    --shadow-color: rgb(176,25,126, 0.5); /* Used for the shadow in the calendar */
+}
+
+.theme-golden {
+    --panel-header-color: #CC9318; /* Standard color for panels header*/
+    --panel-header-text-color: #000000; /* Used for headers in panels, like Page - csh/Wikithoughts */
+    --panel-body-color: #000000; /* text body */
+    --panel-body-text-color: #FFFFFF; /* Used for the text within said panels */
+    --border-color: #34495E; /* Used for borders around elements */
+    --shadow-color: rgba(206, 191, 149, 0.767); /* Used for the shadow in the calendar */
+}
+
 body{
     background-image: url('/static/img/darkmodeF.png');
     overflow: hidden;
@@ -10,14 +47,21 @@ body{
 }
 
 .panel-primary{
-    background: #34495e;
-    border: 8px #34495e solid ;
+    background: var(--border-color);
+    border: 8px var(--border-color) solid ;
     border-radius: 10px;
 }
 
+.panel-heading{
+    background-color: var(--panel-header-color) !important;
+}
+
+.panel-body{
+    background-color: var(--panel-body-color) !important;
+}
 #top-bar{
-    border: 5px #B0197E solid;
-    background-color: #34495e;
+    border: 5px var(--panel-header-color) solid;
+    background-color: var(--border-color);
 }
 
 #timewidget-fake{
@@ -25,19 +69,18 @@ body{
 }
 
 .file-title{
-    color: #fcf6fa;
+    color: var(--panel-body-text-color);
     font-family: 'Courier New', Courier, monospace;
     font-size: 28px;
-    border-left: 5px #B0197E solid;
+    border-left: 5px var(--panel-header-color) solid;
     float: right;
     width: 29%;
 }
 
 .js-title{
-    color: #fcf6fa;
+    color: var(--panel-body-text-color);
     font-family: 'Courier New', Courier, monospace;
     font-size: 30px;
-    border-left: 5px #B0197E solid;
     float: right;
 }
 
@@ -49,18 +92,18 @@ body{
 .weatherwidget{
     float: right;
     width: 49%;
-    border: 8px #34495e solid;
+    border: 8px var(--border-color) solid;
     border-radius: 10px;
-    background-color: #34495e;
+    background-color: var(--border-color);
     margin-bottom: 1.5%;
 }
 
 .datadog{
     margin-top: 20px;
     overflow: auto;
-    border: 8px #34495e solid;
+    border: 8px var(--border-color) solid;
     border-radius: 10px;
-    background-color: #34495e;
+    background-color: var(--border-color);
     width: 760px;
     height: 580px;
     float: right;
@@ -78,14 +121,14 @@ body{
 }
 
 .announcements-text-header{
-    color: white;
+    color: var(--panel-header-text-color);
     font-family: 'Courier New', Courier, monospace;
     font-size: 20px;
     text-align: center;
 }
 
 .announcements-text-body{
-    color: black;
+    color: var(--panel-body-text-color);
     font-family: 'Courier New', Courier, monospace;
     font-size: 18px;
     text-align: center;
@@ -98,22 +141,22 @@ body{
 }
 
 .wikithoughts-text-header{
-    color: white;
+    color: var(--panel-header-text-color);
     font-family: 'Courier New', Courier, monospace;
     font-size: 20px;
     text-align: center;
 }
 
 .wikithoughts-text-body{
-    color: black;
+    color:var(--panel-body-text-color);
     font-family: 'Courier New', Courier, monospace;
     font-size: 18px;
     text-align: center;
 }
 
 .calendar-frame-lvl1{
-    background-color: #fcf6fa;
-    border: 8px #34495e solid;
+    background-color: var(--panel-body-color);
+    border: 8px var(--border-color) solid;
     border-radius: 10px;
     margin-top: 20px;
     height: 950px;
@@ -127,17 +170,23 @@ body{
 }
 
 .calendar-text-date{
-    color: #4c4c4c;
+    color: var(--panel-body-text-color);
     font-family: 'Courier New', Courier, monospace;
     font-size: 20px;
-    text-shadow: 2px 2px 3px rgb(176,25,126, 0.5);
+    text-shadow: 2px 2px 3px var(--shadow-color);
     text-align: center;
 }
 
 .calendar-text{
-    color: black;
+    color: var(--panel-body-text-color);
     font-family: 'Courier New', Courier, monospace;
     font-size: 19px;
+}
+
+.calendar-border{
+    border: 0px solid;
+    border-top: 2px solid var(--panel-header-color);
+    margin: 10px 0;
 }
 
 @media screen and (max-width: 1899px) {

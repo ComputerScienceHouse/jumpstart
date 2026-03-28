@@ -54,7 +54,7 @@ HUMANIZER_CHECKS: dict[int, str] = {
 	(WEEK - DAY): f"In %{DAY}% Days",
 }
 
-BORDER_STRING: str = "<hr style='border: 1px #B0197E solid;'>"
+BORDER_STRING: str = '<hr class="calendar-border">'
 TIME_PATTERN = re.compile(r"%([^%]+)%")
 
 
