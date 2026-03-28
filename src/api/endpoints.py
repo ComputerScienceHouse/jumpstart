@@ -60,23 +60,30 @@ async def slack_events(request: Request) -> JSONResponse:
 		logger.info("Received Slack event!")
 
 		body: dict = await request.json()
-
+		logger.info(body)
+		logger.info("\n")
 		if request.headers.get("content-type") == "application/json":
 			if body.get("type") == "url_verification":
+				logger.info("SLACK EVENT: Was a challenge!")
 				return JSONResponse({"challenge": body.get("challenge")})
 
 		if not body:
+			logger.info("SLACK EVENT: Was a challenge, with no body")
 			return JSONResponse({"challenge": body.get("challenge")})
 
 		event: dict = body.get("event", {})
 		cleaned_text: str = slack.clean_text(event.get("text", ""))
 
 		if event.get("subtype", None) is not None:
+			logger.info("SLACK EVENT: Had no subtype, ignoring it")
 			return JSONResponse({"status": "ignored"})
 
-		if event not in WATCHED_CHANNELS:
+		if event.get("channel", None) not in WATCHED_CHANNELS:
+			logger.info("SLACK EVENT: Message was not in a Watched Channel, returning!")
+			logger.info(WATCHED_CHANNELS)
 			return JSONResponse({"status": "ignored"})
 
+		logger.info("SLACK EVENT: Requesting upload via dm!")
 		await slack.request_upload_via_dm(event.get("user", ""), cleaned_text)
 	except Exception as e:
 		logger.error(f"Error handling Slack event: {e}")
