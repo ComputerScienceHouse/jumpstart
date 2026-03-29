@@ -23,7 +23,8 @@ async function longUpdate() {
     const day = date.getDate();
     const isDay = (hour > 9 && hour < 18);
 
-    let is_golden = true;
+    let is_golden = (month === 4 && [10, 11, 12].includes(day));
+    is_golden = true; /* Temp for testing */
     let bgImage = "url(../static/img/darkmodeF.png)";
     
 
@@ -31,8 +32,8 @@ async function longUpdate() {
         bgImage = "url(../static/img/valentinemode.png)";
     } else if (month === 3 && day === 13) {
         bgImage = "url(../static/img/jumpstartbang.png)";
-    } else if (month === 4 && [10, 11, 12].includes(day)) {
-        is_golden = true;
+    } else if (is_golden) {
+        bgImage = "url(../static/img/goldenmode.png)";
     } else if (month === 10 && [29, 30, 31].includes(day)) {
         bgImage = "url(../static/img/spookymode.png)";
     } else if (month === 11 && day === 2) {
