@@ -23,7 +23,7 @@ async function longUpdate() {
     const day = date.getDate();
     const isDay = (hour > 9 && hour < 18);
 
-    let is_golden = (month === 4 && [10, 11, 12].includes(day));
+    let is_golden = true;
     is_golden = true; /* Temp for testing */
     let bgImage = "url(../static/img/darkmodeF.png)";
     
