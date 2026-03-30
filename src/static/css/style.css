@@ -27,7 +27,7 @@
 }
 
 .theme-golden {
-    --panel-header-color: #CC9318; /* Standard color for panels header*/
+    --panel-header-color: #FFC64A; /* Standard color for panels header*/
     --panel-header-text-color: #000000; /* Used for headers in panels, like Page - csh/Wikithoughts */
     --panel-body-color: #000000; /* text body */
     --panel-body-text-color: #FFFFFF; /* Used for the text within said panels */
@@ -69,7 +69,7 @@ body{
 }
 
 .file-title{
-    color: var(--panel-body-text-color);
+    color: #FFFFFF;
     font-family: 'Courier New', Courier, monospace;
     font-size: 28px;
     border-left: 5px var(--panel-header-color) solid;
@@ -78,7 +78,7 @@ body{
 }
 
 .js-title{
-    color: var(--panel-body-text-color);
+    color: #FFFFFF;
     font-family: 'Courier New', Courier, monospace;
     font-size: 30px;
     float: right;
