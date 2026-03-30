@@ -75,7 +75,6 @@ async function longUpdate() {
     const isDay = (hour > 9 && hour < 18);
 
     let is_golden = (month === 4 && [9, 10, 11, 12].includes(day));
-    is_golden = true;
     let bgImage = "url(../static/img/darkmodeF.png)";
     
     if (month === 2 && [12, 13, 14].includes(day)) {
