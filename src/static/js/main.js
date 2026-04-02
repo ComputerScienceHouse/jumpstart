@@ -87,6 +87,8 @@ async function longUpdate() {
         bgImage = "url(../static/img/jumpstartbang.png)";
     } else if (is_golden) {
         bgImage = "url(../static/img/goldenmode.png)";
+    } else if (is_golden) {
+        bgImage = "url(../static/img/goldenmode.png)";
     } else if (month === 10 && [29, 30, 31].includes(day)) {
         bgImage = "url(../static/img/spookymode.png)";
     } else if (month === 11 && day === 2) {
@@ -110,7 +112,6 @@ async function longUpdate() {
         setNewPageTheme(allThemes[themeToLoad].page);
         setDatadogTheme(allThemes[themeToLoad].datadog);
         setWeatherTheme(allThemes[themeToLoad].weather);
-
 
         const res = await fetch('/api/calendar', { method: 'GET', mode: 'cors' });
         const data = await res.json();
