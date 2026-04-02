@@ -30,7 +30,7 @@ async def lifespan(app: FastAPI):
 	async with asyncio.TaskGroup() as tg:
 		tg.create_task(cshcalendar.rebuild_calendar())
 	await wikithoughts.auth_bot()
-	
+
 	yield
 	logger.info("Shutting down the Jumpstart application!")
 	await cshcalendar.close_client()

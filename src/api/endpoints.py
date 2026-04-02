@@ -17,6 +17,7 @@ router: APIRouter = APIRouter()
 ACCEPT_MESSAGE: str = "Posting right now :^)"
 DENY_MESSAGE: str = "Okay :( maybe next time"
 
+
 @router.get("/api/calendar")
 async def get_calendar() -> JSONResponse:
 	"""

@@ -219,16 +219,15 @@ def process_category_page(r_json: dict[str, str]) -> tuple[list[str], bool | str
 		return (titles, False)
 
 
-
 async def fetch_category_pages(response: httpx.Response) -> list[str]:
 	"""
-		Loops through and gets the list of every page for Jumpstart Curated
-		
-		Args:
-			response (httpx.Response): The response to be converted and searched through
+	Loops through and gets the list of every page for Jumpstart Curated
 
-		Returns:
-			list[str]: The list of titles to be fetched.
+	Args:
+		response (httpx.Response): The response to be converted and searched through
+
+	Returns:
+		list[str]: The list of titles to be fetched.
 	"""
 
 	params: dict[str, str] = {
@@ -270,12 +269,11 @@ async def fetch_category_pages(response: httpx.Response) -> list[str]:
 		if repeat_req not in (None, False, ""):
 			params["cmcontinue"] = repeat_req
 
-			response = await client.get(
-				WIKI_API, params=params
-			)
+			response = await client.get(WIKI_API, params=params)
 			continue
 		break
 	return titles_found
+
 
 async def refresh_category_pages() -> list[str]:
 	"""
@@ -311,7 +309,7 @@ async def refresh_category_pages() -> list[str]:
 	if response.status_code == 304:
 		last_updated_time = time_now
 		return page_title_cache
-	
+
 	elif response.status_code == 200:
 		titles = await fetch_category_pages(response=response)
 	else:
