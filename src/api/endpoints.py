@@ -14,6 +14,8 @@ from config import WATCHED_CHANNELS
 logger: Logger = getLogger(__name__)
 router: APIRouter = APIRouter()
 
+ACCEPT_MESSAGE: str = "Posting right now :^)"
+DENY_MESSAGE: str = "Okay :( maybe next time"
 
 @router.get("/api/calendar")
 async def get_calendar() -> JSONResponse:
@@ -121,16 +123,18 @@ async def message_actions(payload: str = Form(...)) -> JSONResponse:
 			slack.add_announcement(message_object)
 
 			if response_url:
-				await httpx.post(
-					response_url,
-					json={"text": "Posting right now :^)", "replace_original": True},
-				)
+				async with httpx.AsyncClient() as client:
+					await client.post(
+						response_url,
+						json={"text": ACCEPT_MESSAGE, "replace_original": True},
+					)
 		else:
 			if response_url:
-				await httpx.post(
-					response_url,
-					json={"text": "Okay :( maybe next time", "replace_original": True},
-				)
+				async with httpx.AsyncClient() as client:
+					await client.post(
+						response_url,
+						json={"text": DENY_MESSAGE, "replace_original": True},
+					)
 
 	except Exception as e:
 		logger.error(f"Error in message_actions: {e}")

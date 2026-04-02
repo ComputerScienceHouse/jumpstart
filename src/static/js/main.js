@@ -2,6 +2,7 @@ let currentPageTheme = "";
 let currentDatadogTheme = "";
 let currentWeatherTheme = "";
 
+let mode_enabled = false;
 /* 
     The struct of all the different themes. 
     - Page: The .css page theme to be loaded (make sure they start with theme-)!
@@ -28,9 +29,7 @@ const allThemes = {
 
 
 function setDatadogTheme(newTheme) {
-    if (newTheme === currentDatadogTheme) {
-        return;
-    }
+    if (newTheme === currentDatadogTheme) return;
     currentDatadogTheme = newTheme;
 
     const iframe = document.getElementById("datadog");
@@ -40,23 +39,35 @@ function setDatadogTheme(newTheme) {
 }
 
 function setWeatherTheme(newTheme) {
-    if (newTheme === currentWeatherTheme) {
-        return;
-    }
+    if (newTheme === currentWeatherTheme) return;
     currentWeatherTheme = newTheme;
-    const widget = document.getElementById("weather-image");
-    widget.setAttribute("data-theme", newTheme);
-    
-    if (globalThis.weatherWidget) {
-        widget.innerHTML = widget.innerHTML;
-        weatherWidget.init();
-    }
+
+    const oldWidget = document.getElementById("weather-image");
+
+    const newWidget = document.createElement("a");
+    newWidget.className = "weatherwidget-io";
+    newWidget.id = "weather-image";
+    newWidget.href = "https://forecast7.com/en/43d16n77d61/rochester/?unit=us";
+
+    newWidget.setAttribute("data-label_1", "ROCHESTER");
+    newWidget.setAttribute("data-label_2", "WEATHER");
+    newWidget.setAttribute("data-font", "Fira Sans");
+    newWidget.setAttribute("data-icons", "Climacons Animated");
+    newWidget.setAttribute("data-days", "100");
+    newWidget.setAttribute("data-theme", newTheme);
+
+    newWidget.textContent = "ROCHESTER WEATHER";
+    oldWidget.replaceWith(newWidget);
+
+    setTimeout(() => {
+        if (globalThis.__weatherwidget_init) {
+            globalThis.__weatherwidget_init();
+        }
+    }, 100);
 }
 
 function setNewPageTheme(newTheme) {
-    if (newTheme === currentPageTheme) {
-        return;
-    }
+    if (newTheme === currentPageTheme) return;
     currentPageTheme = newTheme;
 
     document.body.classList.forEach(cls => {
@@ -77,6 +88,9 @@ async function longUpdate() {
     let is_golden = (month === 4 && [9, 10, 11, 12].includes(day));
     let bgImage = "url(../static/img/darkmodeF.png)";
     
+    is_golden = mode_enabled;
+    mode_enabled = !mode_enabled;
+
     if (month === 2 && [12, 13, 14].includes(day)) {
         bgImage = "url(../static/img/valentinemode.png)";
     } else if (month === 3 && day === 13) {
@@ -111,9 +125,6 @@ async function longUpdate() {
         const res = await fetch('/api/calendar', { method: 'GET', mode: 'cors' });
         const data = await res.json();
         $("#calendar").html(data.data);
-        
-        $("#datadog").attr('src', ddog_dashboard + Date().now());
-
     } catch (err) {
         console.log(err);
     }
