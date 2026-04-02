@@ -57,12 +57,6 @@ function setWeatherTheme(newTheme) {
 
     newWidget.textContent = "ROCHESTER WEATHER";
     oldWidget.replaceWith(newWidget);
-
-    setTimeout(() => {
-        if (globalThis.__weatherwidget_init) {
-            globalThis.__weatherwidget_init();
-        }
-    }, 100);
 }
 
 function setNewPageTheme(newTheme) {
@@ -117,7 +111,6 @@ async function longUpdate() {
         setDatadogTheme(allThemes[themeToLoad].datadog);
         setWeatherTheme(allThemes[themeToLoad].weather);
 
-
         const res = await fetch('/api/calendar', { method: 'GET', mode: 'cors' });
         const data = await res.json();
         $("#calendar").html(data.data);
@@ -144,12 +137,15 @@ async function mediumUpdate() {
 
 
 
-mediumUpdate();
-longUpdate();
+document.addEventListener("DOMContentLoaded", () => {
+    mediumUpdate();
+    longUpdate();
 
-setInterval(longUpdate, 60000);
-setInterval(mediumUpdate, 22000);
-setInterval(() => { 
-    if (globalThis.__weatherwidget_init) 
-        globalThis.__weatherwidget_init(); 
-}, 1800000);
+    setInterval(longUpdate, 60000);
+    setInterval(mediumUpdate, 22000);
+
+    setInterval(() => { 
+        if (globalThis.__weatherwidget_init) 
+            globalThis.__weatherwidget_init(); 
+    }, 1800000);
+});
