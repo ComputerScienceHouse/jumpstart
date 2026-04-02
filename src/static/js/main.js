@@ -2,7 +2,6 @@ let currentPageTheme = "";
 let currentDatadogTheme = "";
 let currentWeatherTheme = "";
 
-let mode_enabled = false;
 /* 
     The struct of all the different themes. 
     - Page: The .css page theme to be loaded (make sure they start with theme-)!
@@ -88,9 +87,6 @@ async function longUpdate() {
     let is_golden = (month === 4 && [9, 10, 11, 12].includes(day));
     let bgImage = "url(../static/img/darkmodeF.png)";
     
-    is_golden = mode_enabled;
-    mode_enabled = !mode_enabled;
-
     if (month === 2 && [12, 13, 14].includes(day)) {
         bgImage = "url(../static/img/valentinemode.png)";
     } else if (month === 3 && day === 13) {
