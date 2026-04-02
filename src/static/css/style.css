@@ -9,30 +9,30 @@
 }
 
 .theme-dark {
-    --panel-header-color: #B0197E; /* Standard color for panels header*/
-    --panel-header-text-color: #FFFFFF; /* Used for headers in panels, like Page - csh/Wikithoughts */
-    --panel-body-color: #000000; /* text body */
-    --panel-body-text-color: #FFFFFF; /* Used for the text within said panels */
-    --border-color: #34495E; /* Used for borders around elements */
-    --shadow-color: rgba(255, 0, 170, 0.705); /* Used for the shadow in the calendar */
+    --panel-header-color: #B0197E;
+    --panel-header-text-color: #FFFFFF;
+    --panel-body-color: #000000;
+    --panel-body-text-color: #FFFFFF;
+    --border-color: #34495E;
+    --shadow-color: rgba(255, 0, 170, 0.705);
 }
 
 .theme-light {
-    --panel-header-color: #B0197E; /* Standard color for panels header*/
-    --panel-body-color: #FFFFFF; /* text body */
-    --panel-header-text-color: #FFFFFF; /* Used for headers in panels, like Page - csh/Wikithoughts */
-    --panel-body-text-color: #000000; /* Used for the text within said panels */
-    --border-color: #34495E; /* Used for borders around elements */
-    --shadow-color: rgb(176,25,126, 0.5); /* Used for the shadow in the calendar */
+    --panel-header-color: #B0197E;
+    --panel-body-color: #FFFFFF;
+    --panel-header-text-color: #FFFFFF;
+    --panel-body-text-color: #000000;
+    --border-color: #34495E;
+    --shadow-color: rgb(176,25,126, 0.5);
 }
 
 .theme-golden {
-    --panel-header-color: #FFC64A; /* Standard color for panels header*/
-    --panel-header-text-color: #000000; /* Used for headers in panels, like Page - csh/Wikithoughts */
-    --panel-body-color: #000000; /* text body */
-    --panel-body-text-color: #FFFFFF; /* Used for the text within said panels */
-    --border-color: #34495E; /* Used for borders around elements */
-    --shadow-color: rgba(206, 191, 149, 0.767); /* Used for the shadow in the calendar */
+    --panel-header-color: #FFC64A;
+    --panel-header-text-color: #000000;
+    --panel-body-color: #000000;
+    --panel-body-text-color: #FFFFFF;
+    --border-color: #34495E;
+    --shadow-color: rgb(255, 212, 94);
 }
 
 body{
