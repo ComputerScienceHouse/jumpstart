@@ -11,7 +11,7 @@ All information displayed has been authorized to been shown.
 Documentation for the project can be found be appended /docs to the url
 All HTML requests that are sent in the project can be seen by appending /swag
 
-This project uses Python, [FastAPI](https://fastapi.tiangolo.com/), HTML/CSS, and Javascript. 
+This project uses Python, [FastAPI](https://fastapi.tiangolo.com/), HTML/CSS, and Javascript.
 See it live [here](http://jumpstart-cubed.cs.house/)!
 
 ## Installing
@@ -46,3 +46,10 @@ Jumpstart also has support for Docker Compose, a extended version of docker that
     docker compose up
 ```
 
+## Development
+1. Install uv on your system if not already on it (this just makes it easy)
+2. Run: `uv venv .venv --python 3.14`
+3. Activate the virtual environment
+4. Run: `uv pip install -r dev-requirements.txt`, `uv pip install -r src/requirements.txt`, `uv pip install -r tests/requirements,txt`, and `uv pip install -r docs/requirements.txt`
+5. Run: `pre-commit install`
+6. You're all set!
