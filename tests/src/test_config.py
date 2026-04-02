@@ -1,12 +1,13 @@
 import sys
 import importlib
 
-import pytest
-
 
 def import_config_module() -> object:
 	"""
 	Helper function to import the config module after modifying environment variables.
+
+	Returns:
+		object: The imported config module.
 	"""
 
 	if "config" in sys.modules:
@@ -15,21 +16,20 @@ def import_config_module() -> object:
 	return importlib.import_module("config")
 
 
-def test_missing_slack_token_raises(monkeypatch) -> None:
+def test_get_env_variable(monkeypatch) -> None:
 	"""
-	Test that if SLACK_API_TOKEN is missing, an exception is raised.
+	Test the _get_env_variable function to ensure it retrieves environment variables correctly.
 
 	Args:
 	    monkeypatch: The pytest monkeypatch fixture.
 	"""
 
-	# Ensure SLACK_API_TOKEN is not set
-	monkeypatch.delenv("SLACK_API_TOKEN", raising=False)
-	# Prevent leftover module from interfering
-	sys.modules.pop("config", None)
+	monkeypatch.setenv("TEST_ENV_VAR", "test_value")
+	cfg = import_config_module()
 
-	with pytest.raises(Exception, match="Missing SLACK_API_TOKEN"):
-		import_config_module()
+	assert cfg._get_env_variable("TEST_ENV_VAR", None) == "test_value"
+	assert cfg._get_env_variable("NON_EXISTENT_VAR", "default_value") == "default_value"
+	assert cfg._get_env_variable("NON_EXISTENT_VAR", None) is None
 
 
 def test_with_slack_token_parses_values(monkeypatch) -> None:

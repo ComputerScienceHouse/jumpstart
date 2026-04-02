@@ -89,6 +89,7 @@ def ceil_division(num: int, den: int) -> int:
 	Returns:
 		int: the result of the operation
 	"""
+
 	return (num + den - 1) // den
 
 
@@ -113,6 +114,7 @@ def time_humanizer(current_time: datetime, event_time: datetime) -> str:
 		Returns:
 			str: The newly formatted string
 		"""
+
 		num = int(match.group(1))
 		return str(round(time_before_event / num))
 
@@ -146,6 +148,7 @@ def calendar_to_html(seg_header: str, seg_content: str) -> str:
 	Returns:
 		str:
 	"""
+
 	ret_string: str = (
 		"""<div class='calendar-event-container-lvl2'><span class='calendar-text-date'> """
 		+ seg_header
@@ -202,6 +205,7 @@ async def rebuild_calendar() -> None:
 	"""
 	Fetches and rebuilds the global calendar cache. This does NOT return a new cache, but changes the global calendar cache
 	"""
+
 	global calendar_cache, cal_last_update, cal_constructed_event
 	try:
 		cal_constructed_event.clear()
@@ -333,6 +337,7 @@ async def close_client() -> None:
 	Closes the calendar's HTTPX client, logs if the event loops has been
 	closed prior to the function being called
 	"""
+
 	global cshcal_client
 	try:
 		await cshcal_client.aclose()

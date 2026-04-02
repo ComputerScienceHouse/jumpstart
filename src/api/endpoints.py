@@ -2,8 +2,6 @@ from logging import getLogger, Logger
 
 import json
 import httpx
-import random
-import textwrap
 
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import JSONResponse
@@ -24,12 +22,18 @@ async def get_calendar() -> JSONResponse:
 		JSONResponse: A JSON response containing the calendar data.
 	"""
 
-	get_future_events_ical: tuple[
-		cshcalendar.CalendarInfo
-	] = await cshcalendar.get_future_events()
-	formatted_events: dict = cshcalendar.format_events(get_future_events_ical)
+	events: dict[str, str] = {}
 
-	return JSONResponse(formatted_events)
+	try:
+		get_future_events_ical: tuple[
+			cshcalendar.CalendarInfo
+		] = await cshcalendar.get_future_events()
+		events = cshcalendar.format_events(get_future_events_ical)
+	except Exception as e:
+		logger.error(f"Error fetching calendar events: {e}")
+		return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+	return JSONResponse(events)
 
 
 @router.get("/api/announcement")
@@ -57,18 +61,17 @@ async def slack_events(request: Request) -> JSONResponse:
 	"""
 
 	try:
-		logger.info("Received Slack event!")
+		logger.debug(f"Received Slack event: {await request.body()}")
 
 		body: dict = await request.json()
-		logger.info(body)
-		logger.info("\n")
+
 		if request.headers.get("content-type") == "application/json":
 			if body.get("type") == "url_verification":
 				logger.info("SLACK EVENT: Was a challenge!")
 				return JSONResponse({"challenge": body.get("challenge")})
 
 		if not body:
-			logger.info("SLACK EVENT: Was a challenge, with no body")
+			logger.debug("SLACK EVENT: Was a challenge, with no body")
 			return JSONResponse({"challenge": body.get("challenge")})
 
 		event: dict = body.get("event", {})
@@ -79,8 +82,9 @@ async def slack_events(request: Request) -> JSONResponse:
 			return JSONResponse({"status": "ignored"})
 
 		if event.get("channel", None) not in WATCHED_CHANNELS:
-			logger.info("SLACK EVENT: Message was not in a Watched Channel, returning!")
-			logger.info(WATCHED_CHANNELS)
+			logger.info(
+				"SLACK EVENT: Message was not in a Watched Channel, ignoring it"
+			)
 			return JSONResponse({"status": "ignored"})
 
 		logger.info("SLACK EVENT: Requesting upload via dm!")
@@ -112,12 +116,14 @@ async def message_actions(payload: str = Form(...)) -> JSONResponse:
 			return JSONResponse({}, status_code=200)
 
 		if slack.convert_user_response_to_bool(form_json):
-			logger.info("User approved the announcement!")
-			logger.info(f"{form_json}\n\n")
+			logger.info(
+				"User approved the announcement, Adding it to the announcement list!"
+			)
+
 			message_object: dict[str, dict] = json.loads(
 				form_json.get("actions", [{}])[0].get("value", '{text:""}')
 			).get("text", None)
-			logger.info(f"Display Object {message_object}")
+
 			slack.add_announcement(message_object)
 
 			if response_url:
@@ -147,5 +153,13 @@ async def wikithought() -> JSONResponse:
 	Returns:
 		JSONResponse: A JSON response containing a random Wiki thought.
 	"""
-	returned_page_data: dict[str, str] = await wikithoughts.get_next_display()
-	return JSONResponse(returned_page_data)
+
+	page_data: dict | None = None
+
+	try:
+		page_data = await wikithoughts.get_next_display()
+	except Exception as e:
+		logger.error(f"Error fetching wiki thought: {e}")
+		return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+	return JSONResponse(page_data)
