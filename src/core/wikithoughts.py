@@ -266,6 +266,8 @@ async def fetch_category_pages(response: httpx.Response) -> list[str]:
 
 	titles_found: list[str] = []
 
+	failed_authentication_attempts: int = 0
+
 	while True:
 		r_json: dict[str, str] = response.json()
 
@@ -339,15 +341,16 @@ async def refresh_category_pages() -> list[str]:
 		WIKI_API, params=params, headers=headers
 	)
 
-	if response.status_code == 304:
-		last_updated_time = time_now
-		return page_title_cache
-
-	elif response.status_code == 200:
-		titles = await fetch_category_pages(response=response)
-	else:
-		logger.warning("Failed to update the CSH wiki page!")
-		return page_title_cache
+	match response.status_code:
+		case 304:
+			logger.info("Category pages not updated, refreshing last update!")
+			last_updated_time = time_now
+			return page_title_cache
+		case 200:
+			titles = await fetch_category_pages(response=response)
+		case _:
+			logger.warning("Failed to update the wiki category pages!")
+			return page_title_cache
 
 	last_updated_time = time_now
 	page_title_cache = titles
