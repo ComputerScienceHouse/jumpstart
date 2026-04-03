@@ -2,8 +2,8 @@ let currentPageTheme = "";
 let currentDatadogTheme = "";
 let currentWeatherTheme = "";
 
-/* 
-    The struct of all the different themes. 
+/*
+    The struct of all the different themes.
     - Page: The .css page theme to be loaded (make sure they start with theme-)!
     - Datadog: The datadog theme to be loaded, can either be light or dark
     - Weather: The theme of the weather widget, all the styles can be found here: https://weatherwidget.io/
@@ -68,7 +68,7 @@ function setNewPageTheme(newTheme) {
         document.body.classList.remove(cls);
     }});
 
-    document.body.classList.toggle(newTheme); 
+    document.body.classList.toggle(newTheme);
 }
 
 async function longUpdate() {
