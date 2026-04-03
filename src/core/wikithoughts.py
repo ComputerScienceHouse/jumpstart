@@ -1,12 +1,15 @@
-import httpx
-import asyncio
-from datetime import datetime, timedelta
-from itertools import islice
-from typing import Pattern
-from config import WIKIBOT_PASSWORD, WIKIBOT_USER, WIKI_CATEGORY, WIKI_API
-import logging
-import random
 import re
+import httpx
+import random
+import asyncio
+import logging
+
+from typing import Pattern
+from itertools import islice
+from datetime import datetime, timedelta
+
+from config import WIKIBOT_PASSWORD, WIKIBOT_USER, WIKI_CATEGORY, WIKI_API
+
 
 CYCLE_DEBOUNCE_TIME: int = 12  # How long it takes to resfresh wiki titles
 BATCH_SIZE: int = 50  # max titles per request
@@ -17,9 +20,14 @@ REAUTHENTICATE_ATTEMPTS: int = (
 HEADERS: dict[str, str] = {"User-Agent": "JumpstartFetcher/1.0"}
 AUTH: tuple[str] = (WIKIBOT_USER, WIKIBOT_PASSWORD)
 
-client: httpx.AsyncClient = httpx.AsyncClient(headers=HEADERS, auth=AUTH)
-
 logger: logging.Logger = logging.getLogger(__name__)
+
+client: httpx.AsyncClient | None = None
+
+try:
+	client = httpx.AsyncClient(headers=HEADERS, auth=AUTH)
+except Exception as e:
+	logger.warning(f"Failed to initialize HTTP client for wiki: {e}")
 
 bot_authenticated: bool = False
 last_updated_time: datetime | None = None
@@ -96,10 +104,13 @@ def batch_iterable(iterable: list, size: int):
 	Args:
 		iterable (list): The iterable to be split up for batches
 		size (int): the size of the batches
+
 	Yields:
 	    A batch split by the requested size
 	"""
+
 	it = iter(iterable)
+
 	while True:
 		batch = list(islice(it, size))
 		if not batch:
@@ -111,6 +122,17 @@ async def auth_bot() -> None:
 	"""
 	Authenticates the CSH Wiki bot, logging if it was successful or not
 	"""
+
+	if not WIKI_API or not WIKIBOT_USER or not WIKIBOT_PASSWORD:
+		logger.warning("Missing wiki API credentials, unable to authenticate the bot!")
+		return
+
+	if not client:
+		logger.warning(
+			"HTTP client for wiki is not initialized, unable to authenticate the bot!"
+		)
+		return
+
 	token_req: httpx.Response = await client.get(
 		WIKI_API,
 		params={"action": "query", "meta": "tokens", "type": "login", "format": "json"},
@@ -154,6 +176,7 @@ def headers_formatting(
 	Returns:
 		dict[str,str]: The new headers to be applied
 	"""
+
 	global etag, last_modifed
 
 	headers: dict[str, str] = {}
@@ -166,6 +189,7 @@ def headers_formatting(
 
 	if etag:
 		headers["If-None-Match"] = etag
+
 	if last_modifed:
 		headers["If-Modified-Since"] = last_modifed
 
@@ -204,7 +228,9 @@ def process_category_page(r_json: dict[str, str]) -> tuple[list[str], bool | str
 	Returns:
 		tuple[list[str], bool | str]: The list of titles from the request, along with a possible continutation if needed
 	"""
+
 	titles: list[str] = []
+
 	if "query" in r_json:
 		for page in r_json["query"]["categorymembers"]:
 			titles.append(page["title"])
@@ -239,6 +265,8 @@ async def fetch_category_pages(response: httpx.Response) -> list[str]:
 	}
 
 	titles_found: list[str] = []
+
+	failed_authentication_attempts: int = 0
 
 	while True:
 		r_json: dict[str, str] = response.json()
@@ -286,6 +314,13 @@ async def refresh_category_pages() -> list[str]:
 	    list[str]
 		: All the page titles found in this category, None if the bot is not authorized
 	"""
+
+	if not client:
+		logger.warning(
+			"HTTP client for wiki is not initialized, unable to refresh category pages!"
+		)
+		return []
+
 	global page_title_cache, last_updated_time, queued_pages, shown_pages
 	time_now: datetime = datetime.now()
 
@@ -306,15 +341,16 @@ async def refresh_category_pages() -> list[str]:
 		WIKI_API, params=params, headers=headers
 	)
 
-	if response.status_code == 304:
-		last_updated_time = time_now
-		return page_title_cache
-
-	elif response.status_code == 200:
-		titles = await fetch_category_pages(response=response)
-	else:
-		logger.warning("Failed to update the CSH wiki page!")
-		return page_title_cache
+	match response.status_code:
+		case 304:
+			logger.info("Category pages not updated, refreshing last update!")
+			last_updated_time = time_now
+			return page_title_cache
+		case 200:
+			titles = await fetch_category_pages(response=response)
+		case _:
+			logger.warning("Failed to update the wiki category pages!")
+			return page_title_cache
 
 	last_updated_time = time_now
 	page_title_cache = titles
@@ -331,6 +367,13 @@ async def refresh_page_dictionary() -> None:
 	"""
 	Fetches the pages based off the cache of page titles, and updates the page cache accordingly
 	"""
+
+	if not client:
+		logger.warning(
+			"HTTP client for wiki is not initialized, unable to refresh page dictionary!"
+		)
+		return
+
 	global page_dict_cache, page_title_cache
 
 	if not page_title_cache:
@@ -378,8 +421,11 @@ def reset_queues() -> None:
 	"""
 	Swaps Queued and Shown pages queued
 	"""
+
 	global queued_pages, shown_pages
+
 	logger.info("RESETING QUEUES FOR WIKITHOUGHTS")
+
 	if len(queued_pages) > 0:
 		return
 
@@ -396,6 +442,7 @@ async def get_next_display() -> dict[str, str]:
 	Returns:
 		dict["page": str,"content": str]: The JSON of the page name and the first paragraph
 	"""
+
 	global queued_pages, shown_pages, page_last_updated, current_page
 
 	if page_last_updated and (

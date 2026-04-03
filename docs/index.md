@@ -5,10 +5,10 @@
 ![Static Badge](https://img.shields.io/badge/%40gravy-made_by?style=flat-square&logo=github&labelColor=%230d1117&color=%23E11C52&link=https%3A%2F%2Fgithub.com%2FNikolaiStrong)
 
 
-A graphical interface that displays information in the elevator lobby of Computer Science House. 
+A graphical interface that displays information in the elevator lobby of Computer Science House.
 All information displayed has been authorized to been shown.
 
-This project uses Python, [FastAPI](https://fastapi.tiangolo.com/), HTML/CSS, and Javascript. 
+This project uses Python, [FastAPI](https://fastapi.tiangolo.com/), HTML/CSS, and Javascript.
 See it live [here](http://jumpstart-squared.cs.house/)!
 
 The application has multiple features:
@@ -23,7 +23,7 @@ The application has multiple features:
  5. An informational that displays real-time status information from CSH’s server room.
 
  6. Calendar module that uses the Python ICalendar to display a countdown to the next 10 events from the CSH calendar.
- 
+
  7. Displays a daily forecast.
 
 ### AUTHORS:

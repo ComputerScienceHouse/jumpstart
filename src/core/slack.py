@@ -5,7 +5,6 @@ import json
 from logging import getLogger, Logger
 
 from slack_sdk.web.async_client import AsyncWebClient
-from slack_sdk.errors import SlackApiError
 
 from config import SLACK_API_TOKEN, SLACK_JUMPSTART_MESSAGE, SLACK_DM_TEMPLATE
 
@@ -45,17 +44,20 @@ async def gather_emojis() -> dict:
 		dict: A mapping of emoji names to their URLs.
 	"""
 
-	logger.info("Gathering emojis from slack!")
+	emojis: dict = {}
 
 	try:
+		if client is None:
+			raise ValueError("Slack client is not initialized")
+
 		emoji_request: dict = await client.emoji_list()
 		assert emoji_request.get("ok", False)
 
-		return emoji_request.get("emoji", {})
+		emojis = emoji_request.get("emoji", {})
 	except Exception as e:
 		logger.error(f"Error gathering emojis: {e}")
 
-	return {}
+	return emojis
 
 
 async def request_upload_via_dm(user_id: str, announcement_text: str) -> None:
@@ -67,9 +69,10 @@ async def request_upload_via_dm(user_id: str, announcement_text: str) -> None:
 		announcement_text (str): The text of the announcement to be posted.
 	"""
 
-	logger.info("Requesting upload announcement permission!")
-
 	try:
+		if client is None:
+			raise ValueError("Slack client is not initialized")
+
 		message: dict = copy.deepcopy(SLACK_DM_TEMPLATE)
 
 		message[0]["text"]["text"] += announcement_text
