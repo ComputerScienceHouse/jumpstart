@@ -20,7 +20,17 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.13'
+          python-version: '3.14'
+
+      - name: Install dependencies
+        run: |
+          pip install uv
+          uv pip install -r src/requirements.txt --system
+          uv pip install -r tests/requirements.txt --system
+
+      - name: Run tests with coverage
+        run: |
+          pytest -v
 
       - uses: SonarSource/sonarqube-scan-action@v6
         env:

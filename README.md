@@ -47,9 +47,27 @@ Jumpstart also has support for Docker Compose, a extended version of docker that
 ```
 
 ## Development
+
+### Setup
 1. Install uv on your system if not already on it (this just makes it easy)
-2. Run: `uv venv .venv --python 3.14`
+2. Run: `uv venv .venv`
 3. Activate the virtual environment
-4. Run: `uv pip install -r dev-requirements.txt`, `uv pip install -r src/requirements.txt`, `uv pip install -r tests/requirements,txt`, and `uv pip install -r docs/requirements.txt`
+    * Bash: `source .venv/bin/activate`
+    * Fish: `source .venv/bin/activate.fish`
+    * Windows: `.venv\Scripts\activate`
+    * Other: Good luck!
+4. Run:
+    * `uv pip install -r dev-requirements.txt`
+    * `uv pip install -r src/requirements.txt`
+    * `uv pip install -r tests/requirements,txt`
+    * `uv pip install -r docs/requirements.txt`
 5. Run: `pre-commit install`
 6. You're all set!
+
+### Testing
+
+We're using the pytest framework to create tests. A good minimum coverage requirement is about <=90%.
+
+To run the tests just run: `pytest`
+
+`coverage.xml` and `htmlcov` should be generated. `coverage.xml` is used for Sonarqube, while `htmlcov` is a local html view into code coverage. The easiest way to view the coverage site is to enter the directory and run: `python -m http.server` and visit the site!
