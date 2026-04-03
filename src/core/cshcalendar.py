@@ -318,10 +318,9 @@ async def get_future_events() -> list[CalendarInfo]:
 
 		if cal_correct_length:
 			logger.info("Calendar cache is full length, rebuilding async!")
-			asyncio.create_task(
-				rebuild_calendar()
-			)  # Calendar is correct length, we can just run this in the background
-			# Make it a variable for GC purposes? idk sonarqube told me to do it
+			async with asyncio.TaskGroup() as taskGroup:
+				taskGroup.create_task(rebuild_calendar())
+				# Calendar is correct length, we can just run this in the background
 		else:
 			logger.info("Calendar cache is NOT full length, yielding rebuild!")
 			await rebuild_calendar()

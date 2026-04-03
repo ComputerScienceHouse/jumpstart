@@ -38,10 +38,10 @@ use_directory_urls: false
 nav:
   - Home: index.md
   - Getting Started: getting-started/getting-started.md
-  - Backend:
-      - Wikithoughts: core/Wiki-thoughts.md
+  - Backend:      
       - Calendar: core/CSH Calendar.md
-      - Slack: core/Slack.md
+      - Slack Bot: core/Slack.md
+      - Wiki Thoughts: core/Wiki-thoughts.md
   - Endpoints:
       - Calendar: endpoints/calendar_endpoint.md
       - Announcements: endpoints/announcements.md

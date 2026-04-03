@@ -245,6 +245,62 @@ def process_category_page(r_json: dict[str, str]) -> tuple[list[str], bool | str
 		return (titles, False)
 
 
+async def fetch_category_pages(response: httpx.Response) -> list[str]:
+	"""
+	Loops through and gets the list of every page for Jumpstart Curated
+
+	Args:
+		response (httpx.Response): The response to be converted and searched through
+
+	Returns:
+		list[str]: The list of titles to be fetched.
+	"""
+
+	params: dict[str, str] = {
+		"action": "query",
+		"list": "categorymembers",
+		"cmtitle": f"Category:{WIKI_CATEGORY}",
+		"cmlimit": "500",
+		"format": "json",
+	}
+
+	titles_found: list[str] = []
+
+	while True:
+		r_json: dict[str, str] = response.json()
+
+		if "error" in r_json and r_json["error"].get("code") in (
+			"readapidenied",
+			"notloggedin",
+		):
+			if failed_authentication_attempts > REAUTHENTICATE_ATTEMPTS:
+				logger.warning(
+					"Reauthenticating the wikithought bot failed, sending empty response"
+				)
+				return []
+
+			logger.info("Bot was unauthenticated, attempting to reauthenticate!")
+			await auth_bot()
+			if not (bot_authenticated):
+				logger.warning(
+					f"Failed to reauthenticate the bot! Attempt: {failed_authentication_attempts}"
+				)
+
+			failed_authentication_attempts += 1
+			continue
+
+		added, repeat_req = process_category_page(r_json)
+		titles_found += added
+
+		if repeat_req not in (None, False, ""):
+			params["cmcontinue"] = repeat_req
+
+			response = await client.get(WIKI_API, params=params)
+			continue
+		break
+	return titles_found
+
+
 async def refresh_category_pages() -> list[str]:
 	"""
 	Refreshes all pages of the category
@@ -253,7 +309,8 @@ async def refresh_category_pages() -> list[str]:
 	    category (str): The name of the category to search through
 
 	Returns:
-	    list[str]: All the page titles found in this category, None if the bot is not authorized
+	    list[str]
+		: All the page titles found in this category, None if the bot is not authorized
 	"""
 
 	if not client:
@@ -278,54 +335,19 @@ async def refresh_category_pages() -> list[str]:
 	}
 
 	headers: dict[str, str] = headers_formatting()
-	# This needs to loop due to mediawiki limitations
+	response: httpx.Response = await client.get(
+		WIKI_API, params=params, headers=headers
+	)
 
-	failed_authentication_attempts: int = 0
+	if response.status_code == 304:
+		last_updated_time = time_now
+		return page_title_cache
 
-	while True:
-		response: httpx.Response = await client.get(
-			WIKI_API, params=params, headers=headers
-		)
-
-		if response.status_code == 304:
-			last_updated_time = time_now
-			return page_title_cache
-
-		elif response.status_code == 200:
-			headers_formatting(etag, last_modifed)
-			r_json: dict[str, str] = response.json()
-
-			if "error" in r_json and r_json["error"].get("code") in (
-				"readapidenied",
-				"notloggedin",
-			):
-				if failed_authentication_attempts > REAUTHENTICATE_ATTEMPTS:
-					logger.warning(
-						"Reauthenticating the wikithought bot failed, sending empty response"
-					)
-					return []
-
-				logger.info("Both was unauthenticated, attempting to reauthenticate!")
-				await auth_bot()
-				if not (bot_authenticated):
-					logger.warning(
-						"Failed to reauthenticate the bot! Attempt: "
-						+ failed_authentication_attempts
-					)
-
-				failed_authentication_attempts += 1
-				continue
-
-			added, repeat_req = process_category_page(r_json)
-			titles += added
-
-			if repeat_req not in (None, False, ""):
-				params["cmcontinue"] = repeat_req
-				continue
-			break
-		else:
-			logger.warning("Failed to update the CSH wiki page!")
-			return page_title_cache
+	elif response.status_code == 200:
+		titles = await fetch_category_pages(response=response)
+	else:
+		logger.warning("Failed to update the CSH wiki page!")
+		return page_title_cache
 
 	last_updated_time = time_now
 	page_title_cache = titles
@@ -375,7 +397,6 @@ async def refresh_page_dictionary() -> None:
 		if "query" in r_json:
 			for page in r_json["query"]["pages"].values():
 				wikitext = page["revisions"][0]["slots"]["main"]["*"]
-
 				cleaned_text = clean_wikitext(wikitext)  # unfuck the text
 
 				paragraphs = cleaned_text.split("\n\n")  # Cut the first line

@@ -28,9 +28,7 @@ const allThemes = {
 
 
 function setDatadogTheme(newTheme) {
-    if (newTheme === currentDatadogTheme) {
-        return;
-    }
+    if (newTheme === currentDatadogTheme) return;
     currentDatadogTheme = newTheme;
 
     const iframe = document.getElementById("datadog");
@@ -40,23 +38,29 @@ function setDatadogTheme(newTheme) {
 }
 
 function setWeatherTheme(newTheme) {
-    if (newTheme === currentWeatherTheme) {
-        return;
-    }
+    if (newTheme === currentWeatherTheme) return;
     currentWeatherTheme = newTheme;
-    const widget = document.getElementById("weather-image");
-    widget.setAttribute("data-theme", newTheme);
 
-    if (globalThis.weatherWidget) {
-        widget.innerHTML = widget.innerHTML;
-        weatherWidget.init();
-    }
+    const oldWidget = document.getElementById("weather-image");
+
+    const newWidget = document.createElement("a");
+    newWidget.className = "weatherwidget-io";
+    newWidget.id = "weather-image";
+    newWidget.href = "https://forecast7.com/en/43d16n77d61/rochester/?unit=us";
+
+    newWidget.setAttribute("data-label_1", "ROCHESTER");
+    newWidget.setAttribute("data-label_2", "WEATHER");
+    newWidget.setAttribute("data-font", "Fira Sans");
+    newWidget.setAttribute("data-icons", "Climacons Animated");
+    newWidget.setAttribute("data-days", "100");
+    newWidget.setAttribute("data-theme", newTheme);
+
+    newWidget.textContent = "ROCHESTER WEATHER";
+    oldWidget.replaceWith(newWidget);
 }
 
 function setNewPageTheme(newTheme) {
-    if (newTheme === currentPageTheme) {
-        return;
-    }
+    if (newTheme === currentPageTheme) return;
     currentPageTheme = newTheme;
 
     document.body.classList.forEach(cls => {
@@ -107,13 +111,9 @@ async function longUpdate() {
         setDatadogTheme(allThemes[themeToLoad].datadog);
         setWeatherTheme(allThemes[themeToLoad].weather);
 
-
         const res = await fetch('/api/calendar', { method: 'GET', mode: 'cors' });
         const data = await res.json();
         $("#calendar").html(data.data);
-
-        $("#datadog").attr('src', ddog_dashboard + Date().now());
-
     } catch (err) {
         console.log(err);
     }
@@ -137,12 +137,15 @@ async function mediumUpdate() {
 
 
 
-mediumUpdate();
-longUpdate();
+document.addEventListener("DOMContentLoaded", () => {
+    mediumUpdate();
+    longUpdate();
 
-setInterval(longUpdate, 60000);
-setInterval(mediumUpdate, 22000);
-setInterval(() => {
-    if (globalThis.__weatherwidget_init)
-        globalThis.__weatherwidget_init();
-}, 1800000);
+    setInterval(longUpdate, 60000);
+    setInterval(mediumUpdate, 22000);
+
+    setInterval(() => { 
+        if (globalThis.__weatherwidget_init) 
+            globalThis.__weatherwidget_init(); 
+    }, 1800000);
+});
