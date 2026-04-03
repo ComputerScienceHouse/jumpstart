@@ -78,14 +78,15 @@ async function longUpdate() {
     const day = date.getDate();
     const isDay = (hour > 9 && hour < 18);
 
-    let is_golden = (month === 4 && [9, 10, 11, 12].includes(day));
-    let bgImage = "url(../static/img/darkmodeF.png)";
+    let bgImage = "url(../static/img/darkmodeF.png)";    
+    let themeToLoad = "dark";
     
     if (month === 2 && [12, 13, 14].includes(day)) {
         bgImage = "url(../static/img/valentinemode.png)";
     } else if (month === 3 && day === 13) {
         bgImage = "url(../static/img/jumpstartbang.png)";
-    } else if (is_golden) {
+    } else if (month === 4 && [9, 10, 11, 12].includes(day)) {
+        themeToLoad = "golden";
         bgImage = "url(../static/img/goldenmode.png)";
     } else if (month === 10 && [29, 30, 31].includes(day)) {
         bgImage = "url(../static/img/spookymode.png)";
@@ -94,19 +95,12 @@ async function longUpdate() {
     } else if ([11, 12].includes(month)) {
         bgImage = "url(../static/img/wintermode.png)";
     } else if (isDay) {
+        themeToLoad = "light";
         bgImage = "url(../static/img/lightmodeF.png)";
     }
     $("body").css("background-image", bgImage);
 
     try {
-
-        let themeToLoad = "dark";
-        if (is_golden){
-            themeToLoad = "golden";
-        } else if (isDay) {
-            themeToLoad = "light";
-        }
-
         setNewPageTheme(allThemes[themeToLoad].page);
         setDatadogTheme(allThemes[themeToLoad].datadog);
         setWeatherTheme(allThemes[themeToLoad].weather);

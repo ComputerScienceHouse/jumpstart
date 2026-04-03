@@ -38,9 +38,10 @@ page_last_updated: datetime | None = None
 
 
 # Precompile all the Regex operations
-RE_LINK: Pattern[str] = re.compile(r'\[https?://[^\s"]+\s+"?([^\]"]+)"?\]')
-RE_FILE: Pattern[str] = re.compile(r"\[\[File:[^\]]*\]\]", re.IGNORECASE)
-RE_IMAGE: Pattern[str] = re.compile(r"\[\[Image:[^\]]*\]\]", re.IGNORECASE)
+RE_LINK: Pattern[str] = re.compile(
+	r'\[https?://[^\s"]+\s+"?([^\]"]+)"?\]'
+)  # Https Links
+RE_FILE_IMAGE = re.compile(r"\[\[(?:File|Image):[^\[\]]*\]\]", re.IGNORECASE)
 RE_PAGE_TEXT: Pattern[str] = re.compile(r"\[\[[^\|\]]*\|([^\]]+)\]\]")
 RE_PAGE: Pattern[str] = re.compile(r"\[\[([^\]]+)\]\]")
 RE_CSH: Pattern[str] = re.compile(r"\^\^([^^]+)\^\^")
@@ -61,11 +62,10 @@ def clean_wikitext(text: str) -> str:
 	"""
 
 	reg_operations: tuple[Pattern[str]] = (
-		RE_LINK,
-		RE_FILE,
-		RE_IMAGE,
-		RE_PAGE_TEXT,
 		RE_PAGE,
+		RE_FILE_IMAGE,
+		RE_LINK,
+		RE_PAGE_TEXT,
 		RE_CSH,
 		RE_TEMPLATE,
 		RE_HTML,

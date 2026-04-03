@@ -1,5 +1,3 @@
-## Overview
-
 This core component is used for all the fetching, formatting and structuring for the CSH calendar portion of Jumpstart.
 
 ---

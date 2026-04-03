@@ -39,14 +39,16 @@ nav:
   - Home: index.md
   - Getting Started: getting-started/getting-started.md
   - Backend:      
-      - Calendar: core/CSH Calendar.md
-      - Slack Bot: core/Slack.md
-      - Wiki Thoughts: core/Wiki-thoughts.md
+      - Calendar: core/csh_calendar.md
+      - Slack: core/slack.md
+      - Wikithoughts: core/wikithoughts.md
   - Endpoints:
-      - Calendar: endpoints/calendar_endpoint.md
-      - Announcements: endpoints/announcements.md
-      - Slack Bot: endpoints/slack_bot.md
-      - Wiki Thoughts: endpoints/wikithoughts.md
+      - Calendar: endpoints/csh_calendar.md
+      - Slack: endpoints/slack.md
+      - Wikithoughts: endpoints/wikithoughts.md
+  - Themes:
+      - Themes: themes/overview.md
+      - Adding Your Own: themes/how_to.md
 
 plugins:
   - search
