@@ -85,14 +85,7 @@ async def request_upload_via_dm(user_id: str, announcement_text: str) -> None:
 				"user": user_id,
 			}
 		)
-
-		dm_channel: SlackResponse = await client.conversations_open(users=user_id)
-		channel_id: str | None = dm_channel.get("channel", {}).get("id", None)
-
-		if channel_id is None:
-			logger.warning(f"Unable to open dm with User {user_id}")
-			return
-
+		
 		await client.chat_postMessage(
 			channel=user_id, text=SLACK_JUMPSTART_MESSAGE, blocks=message
 		)
