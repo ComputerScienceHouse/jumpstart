@@ -96,6 +96,9 @@ async def request_upload_via_dm(user_id: str, announcement_text: str) -> None:
 		await client.chat_postMessage(
 			channel=user_id, text=SLACK_JUMPSTART_MESSAGE, blocks=message
 		)
+	except SlackApiError as e:
+		logger.error(f"Slack Error: {e.response['error']}\n")
+		logger.error(f"Full Slack Error: {e.response}")
 	except Exception as e:
 		logger.error(f"Error messaging user {user_id}: {e}")
 
