@@ -99,6 +99,13 @@ def test_request_upload_via_dm_success_and_exception(monkeypatch):
 	recorded = {}
 
 	class FakeClient:
+		async def conversations_open(self, *, users):
+			return {
+				"ok": True,
+				"channel": {
+					"id": "FAKE_CHANNEL"
+				}
+			}
 		async def chat_postMessage(self, *, channel, text, blocks):
 			recorded["channel"] = channel
 			recorded["text"] = text
