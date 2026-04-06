@@ -6,6 +6,7 @@ from logging import getLogger, Logger
 
 from slack_sdk.web.async_client import AsyncWebClient
 from slack_sdk.web.slack_response import SlackResponse
+from slack_sdk.errors import SlackApiError
 
 from config import SLACK_API_TOKEN, SLACK_JUMPSTART_MESSAGE, SLACK_DM_TEMPLATE
 
