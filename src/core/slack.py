@@ -78,6 +78,8 @@ async def request_upload_via_dm(user_id: str, announcement_text: str) -> None:
 
 		message: dict = copy.deepcopy(SLACK_DM_TEMPLATE)
 
+		print(message)
+
 		message[0]["text"]["text"] += announcement_text
 		message[1]["elements"][0]["value"] = json.dumps(
 			{
