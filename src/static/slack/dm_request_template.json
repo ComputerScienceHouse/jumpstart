@@ -14,7 +14,7 @@
                 "text": {"type": "plain_text", "text": "Yes"},
                 "style": "primary",
                 "action_id": "yes_j",
-                "value": null
+                "value": ""
             },
             {
                 "type": "button",

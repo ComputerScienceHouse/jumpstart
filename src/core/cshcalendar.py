@@ -207,6 +207,8 @@ async def rebuild_calendar() -> None:
 	"""
 
 	global calendar_cache, cal_last_update, cal_constructed_event
+
+	current_time: datetime = datetime.now(ZoneInfo(CALENDAR_TIMEZONE))
 	try:
 		cal_constructed_event.clear()
 		found_events: set[CalendarInfo] = set()
@@ -214,8 +216,6 @@ async def rebuild_calendar() -> None:
 		response.raise_for_status()
 
 		cal: Calendar = Calendar.from_ical(response.content)
-
-		current_time: datetime = datetime.now(ZoneInfo(CALENDAR_TIMEZONE))
 
 		fetched_daily_events: list[Event] = recurring_ical_events.of(cal).between(
 			current_time, current_time + timedelta(days=CALENDAR_OUTLOOK_DAYS)

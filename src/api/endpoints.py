@@ -16,7 +16,7 @@ ACCEPT_MESSAGE: str = "Posting right now :^)"
 DENY_MESSAGE: str = "Okay :( maybe next time"
 
 
-@router.get("/api/calendar")
+@router.get("/calendar")
 async def get_calendar() -> JSONResponse:
 	"""
 	Returns calendar data.
@@ -39,7 +39,7 @@ async def get_calendar() -> JSONResponse:
 	return JSONResponse(events)
 
 
-@router.get("/api/announcement")
+@router.get("/announcement")
 def get_announcement() -> JSONResponse:
 	"""
 	Returns announcement data.
@@ -150,7 +150,7 @@ async def message_actions(payload: str = Form(...)) -> JSONResponse:
 	return JSONResponse({"status": "success"}, status_code=200)
 
 
-@router.get("/api/wikithought")
+@router.get("/wikithought")
 async def wikithought() -> JSONResponse:
 	"""
 	Returns a random CSH wiki thought from the MediaWiki API.
