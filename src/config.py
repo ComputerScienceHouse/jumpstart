@@ -56,4 +56,4 @@ WIKIBOT_PASSWORD: str | None = _get_env_variable("WIKIBOT_PASSWORD", None)
 WIKI_CATEGORY: str = _get_env_variable("WIKI_CATEGORY", "JobAdvice")
 
 with open(os.path.join(BASE_DIR, "static", "slack", "dm_request_template.json")) as f:
-	SLACK_DM_TEMPLATE = dict(json.load(f))
+	SLACK_DM_TEMPLATE = json.load(f)
