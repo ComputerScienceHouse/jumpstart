@@ -85,7 +85,7 @@ async def request_upload_via_dm(user_id: str, announcement_text: str) -> None:
 				"user": user_id,
 			}
 		)
-		
+
 		await client.chat_postMessage(
 			channel=user_id, text=SLACK_JUMPSTART_MESSAGE, blocks=message
 		)
