@@ -55,4 +55,4 @@ def test_with_slack_token_parses_values(monkeypatch) -> None:
 	assert cfg.CALENDAR_OUTLOOK_DAYS == 5
 	assert cfg.CALENDAR_EVENT_MAXIMUM == 20
 	assert cfg.CALENDAR_TIMEZONE == "UTC"
-	assert isinstance(cfg.SLACK_DM_TEMPLATE, dict)
+	assert isinstance(cfg.SLACK_DM_TEMPLATE, list)
