@@ -48,7 +48,7 @@ def get_announcement() -> JSONResponse:
 		JSONResponse: A JSON response containing the announcement data.
 	"""
 
-	return JSONResponse({"data": slack.get_announcement()})
+	return JSONResponse(slack.get_announcement())
 
 
 @router.post("/slack/events")
@@ -127,7 +127,8 @@ async def message_actions(payload: str = Form(...)) -> JSONResponse:
 				form_json.get("actions", [{}])[0].get("value", '{text:""}')
 			).get("text", None)
 
-			slack.add_announcement(message_object)
+			user_id = form_json.get("user", {}).get("id")
+			slack.add_announcement(message_object, user_id)
 
 			if response_url:
 				async with httpx.AsyncClient() as client:

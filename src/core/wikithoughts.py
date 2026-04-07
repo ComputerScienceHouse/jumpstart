@@ -160,7 +160,7 @@ async def auth_bot() -> None:
 		logger.info("Bot was authenticated successfully!")
 	else:
 		bot_authenticated = False
-		logger.warning("Bot was unable to authenticate!")
+		logger.warning(f"Bot was unable to authenticate! Response: {returned_json}")
 
 
 def headers_formatting(
@@ -287,6 +287,8 @@ async def fetch_category_pages(response: httpx.Response) -> list[str]:
 				logger.warning(
 					f"Failed to reauthenticate the bot! Attempt: {failed_authentication_attempts}"
 				)
+			else:
+				logger.info("Bot was able to re-auth during runtime!")
 
 			failed_authentication_attempts += 1
 			continue
