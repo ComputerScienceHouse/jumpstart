@@ -164,7 +164,7 @@ def get_announcement() -> dict[str, str] | None:
 	return announcements.pop(0)
 
 
-async def add_announcement(announcement_text: str, user_id: str) -> None:
+def add_announcement(announcement_text: str, username: str) -> None:
 	"""
 	Adds an announcement to the queue.
 
@@ -177,8 +177,6 @@ async def add_announcement(announcement_text: str, user_id: str) -> None:
 		logger.warning("Attempted to add empty announcement, skipping!")
 		return
 
-	username: str = await get_username(user_id=user_id)
-	username = username[:40]
 	new_addition: dict[str, str] = {"content": announcement_text, "user": username}
 
 	announcements.append(new_addition)

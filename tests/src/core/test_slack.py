@@ -140,18 +140,18 @@ def test_get_and_add_announcement(monkeypatch):
 
 	skip_announcements: list[str | None] = [None, "", "   "]
 	for ann in skip_announcements:
-		slack.add_announcement(ann)
+		slack.add_announcement(ann, "FAKE ID")
 
 	assert slack.get_announcement() is None
 
 	test_announcements: list[str] = ["First", "Second", "Third"]
 
 	for ann in test_announcements:
-		slack.add_announcement(ann)
+		slack.add_announcement(ann, "FAKE ID")
 
 	for ann in test_announcements:
-		assert slack.get_announcement() == ann
+		assert slack.get_announcement().get("content", "") == ann
 
 	assert (
-		slack.get_announcement() == test_announcements[-1]
+		slack.get_announcement().get("content", "") == test_announcements[-1]
 	)  # should return last announcement when queue is empty
