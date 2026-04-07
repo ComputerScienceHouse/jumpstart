@@ -287,10 +287,12 @@ async def fetch_category_pages(response: httpx.Response) -> list[str]:
 				logger.warning(
 					f"Failed to reauthenticate the bot! Attempt: {failed_authentication_attempts}"
 				)
+				await asyncio.sleep(3)
 			else:
 				logger.info("Bot was able to re-auth during runtime!")
 
 			failed_authentication_attempts += 1
+			response = await client.get(WIKI_API, params=params)
 			continue
 
 		added, repeat_req = process_category_page(r_json)
