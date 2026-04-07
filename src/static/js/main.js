@@ -124,7 +124,7 @@ async function mediumUpdate() {
         $("#wikipageheader").text(wikiData.page + " - csh/Wikithoughts")
         $("#wikipagetext").text(wikiData.content);
         $("#announcement").text(announcementData.content.substring(0, 910));
-        $("#announcements-header").text("Announcements - " + announcementData.user)
+        $("#announcement-header").text("Announcements - " + announcementData.user)
     } catch (err) {
         console.log(err);
     }
