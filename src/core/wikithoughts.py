@@ -163,7 +163,6 @@ async def auth_bot() -> None:
 		logger.warning(f"Bot was unable to authenticate! Response: {returned_json}")
 
 
-
 def headers_formatting(
 	new_etag: str | None = None, new_last_modified: str | None = None
 ) -> dict[str, str]:

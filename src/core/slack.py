@@ -15,12 +15,15 @@ logger: Logger = getLogger(__name__)
 
 
 client: AsyncWebClient | None = None
+
 try:
 	client = AsyncWebClient(token=SLACK_API_TOKEN)
 except Exception as e:
 	logger.error(f"Failed to initialize Slack client: {e}")
 
-announcements: list[str] = ["Welcome to Jumpstart!"]
+announcements: list[dict[str, str]] = [
+	{"content": "Welcome to Jumpstart!", "user": "Jumpstart"}
+]
 
 
 def clean_text(raw: str) -> str:
@@ -61,6 +64,31 @@ async def gather_emojis() -> dict:
 		logger.error(f"Error gathering emojis: {e}")
 
 	return emojis
+
+
+async def get_username(user_id: str) -> str:
+	"""
+	Attempts to retrieve a slack username relating to a user id
+
+	Args:
+		user_id (str): The ID of the user to retrieve
+
+	Returns:
+		str: The username, or an empty string if not applicable
+	"""
+
+	response = await client.users_info(user=user_id)
+	user = response.get("user", None)
+
+	if user is None:
+		logger.warning(f"Unable to find a user under the id {user_id}")
+		return "Unknown"
+
+	display_name = user.get("profile", {}).get("display_name", None)
+	real_name = user.get("real_name", None)
+	username = user.get("name", None)
+
+	return real_name or display_name or username or "Unknown"
 
 
 async def request_upload_via_dm(user_id: str, announcement_text: str) -> None:
@@ -119,12 +147,12 @@ def convert_user_response_to_bool(message_data: dict) -> bool:
 	return user_response
 
 
-def get_announcement() -> str | None:
+def get_announcement() -> dict[str, str] | None:
 	"""
 	Returns the next announcement in the queue.
 
 	Returns:
-		str | None: The next announcement text, or None if there are no announcements.
+		dict | None: The next announcement text and user, or None if there are no announcements.
 	"""
 
 	if len(announcements) == 0:
@@ -136,16 +164,21 @@ def get_announcement() -> str | None:
 	return announcements.pop(0)
 
 
-def add_announcement(announcement_text: str) -> None:
+def add_announcement(announcement_text: str, user_id: str) -> None:
 	"""
 	Adds an announcement to the queue.
 
 	Args:
 		announcement_text (str): The text of the announcement to be added.
+		user_id (str): The user_id of the person
 	"""
 
 	if announcement_text is None or announcement_text.strip() == "":
 		logger.warning("Attempted to add empty announcement, skipping!")
 		return
 
-	announcements.append(announcement_text)
+	username: str = get_username(user_id=user_id)
+
+	new_addition: dict[str, str] = {"content": announcement_text, "user": username}
+
+	announcements.append(new_addition)

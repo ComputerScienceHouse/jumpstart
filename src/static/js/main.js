@@ -123,7 +123,8 @@ async function mediumUpdate() {
         const announcementData = await announcementRes.json();
         $("#wikipageheader").text(wikiData.page + " - csh/Wikithoughts")
         $("#wikipagetext").text(wikiData.content);
-        $("#announcement").text(announcementData.data.substring(0, 910));
+        $("#announcement").text(announcementData.content.substring(0, 910));
+        $("#announcements-text-header").text("Announcements - " + announcementData.user)
     } catch (err) {
         console.log(err);
     }
