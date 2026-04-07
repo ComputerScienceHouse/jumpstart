@@ -128,7 +128,11 @@ async def message_actions(payload: str = Form(...)) -> JSONResponse:
 			).get("text", None)
 
 			user_id = form_json.get("user", {}).get("id")
-			await slack.add_announcement(message_object, user_id)
+
+			username: str = await slack.get_username(user_id=user_id)
+			username = username[:40]
+
+			slack.add_announcement(message_object, username)
 
 			if response_url:
 				async with httpx.AsyncClient() as client:
