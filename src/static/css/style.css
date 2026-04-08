@@ -8,6 +8,12 @@
     --shadow-color: rgb(176,25,126, 0.5); /* Used for the shadow in the calendar */
 }
 
+/* b {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+} */
+
 .theme-dark {
     --panel-header-color: #B0197E;
     --panel-header-text-color: #FFFFFF;
@@ -125,6 +131,17 @@ body{
     font-family: 'Courier New', Courier, monospace;
     font-size: 20px;
     text-align: center;
+    white-space: pre-line;
+}
+
+.announcements-stamp-header{
+    color: var(--panel-header-text-color);
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 20px;
+    text-align: left;
+    white-space: pre-line;
+    display: block;
+    font-style: italic;
 }
 
 .announcements-text-body{
@@ -145,6 +162,17 @@ body{
     font-family: 'Courier New', Courier, monospace;
     font-size: 20px;
     text-align: center;
+    white-space: pre-line;
+}
+
+.wikithoughts-page-name-header{
+    color: var(--panel-header-text-color);
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 20px;
+    text-align: left;
+    white-space: pre-line;
+    display: block;
+    font-style: italic;
 }
 
 .wikithoughts-text-body{
