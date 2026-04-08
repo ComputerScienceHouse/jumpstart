@@ -121,7 +121,7 @@ async function mediumUpdate() {
         ]);
         const wikiData = await wikiRes.json();
         const announcementData = await announcementRes.json();
-        $("#wikipageheader").text(wikiData.page)
+        $("#wikipageheader").text("csh/Wikithoughts - "  + wikiData.page)
         $("#wikipagetext").text(wikiData.content);
         $("#announcement").text(announcementData.content.substring(0, 910));
         $("#announcement-stamp").text(announcementData.user + " - " + announcementData.timestamp)
