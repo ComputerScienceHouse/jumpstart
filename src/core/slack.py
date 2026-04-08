@@ -8,8 +8,14 @@ from slack_sdk.web.async_client import AsyncWebClient
 from slack_sdk.web.slack_response import SlackResponse
 from slack_sdk.errors import SlackApiError
 
-from config import SLACK_API_TOKEN, SLACK_JUMPSTART_MESSAGE, SLACK_DM_TEMPLATE
-
+from config import (
+	SLACK_API_TOKEN,
+	SLACK_JUMPSTART_MESSAGE,
+	SLACK_DM_TEMPLATE,
+	CALENDAR_TIMEZONE,
+)
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 logger: Logger = getLogger(__name__)
 
@@ -22,7 +28,13 @@ except Exception as e:
 	logger.error(f"Failed to initialize Slack client: {e}")
 
 announcements: list[dict[str, str]] = [
-	{"content": "Welcome to Jumpstart!", "user": "Jumpstart"}
+	{
+		"content": "Welcome to Jumpstart!",
+		"user": "Jumpstart",
+		"timestamp": datetime.now(ZoneInfo(CALENDAR_TIMEZONE))
+		.strftime("%I:%M %p")
+		.lstrip("0"),
+	}
 ]
 
 
@@ -177,6 +189,13 @@ def add_announcement(announcement_text: str, username: str) -> None:
 		logger.warning("Attempted to add empty announcement, skipping!")
 		return
 
-	new_addition: dict[str, str] = {"content": announcement_text, "user": username}
+	current_time = (
+		datetime.now(tz=ZoneInfo(CALENDAR_TIMEZONE)).strftime("%I:%M %p").lstrip("0")
+	)
+	new_addition: dict[str, str] = {
+		"content": announcement_text,
+		"user": username,
+		"timestamp": current_time,
+	}
 
 	announcements.append(new_addition)

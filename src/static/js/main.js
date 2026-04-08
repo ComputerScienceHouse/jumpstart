@@ -121,10 +121,11 @@ async function mediumUpdate() {
         ]);
         const wikiData = await wikiRes.json();
         const announcementData = await announcementRes.json();
-        $("#wikipageheader").text(wikiData.page + " - csh/Wikithoughts")
+        $("#wikipageheader").text(wikiData.page)
         $("#wikipagetext").text(wikiData.content);
         $("#announcement").text(announcementData.content.substring(0, 910));
-        $("#announcement-header").text("Announcements - " + announcementData.user)
+        $("#announcement-stamp").text(announcementData.user + " - " + announcementData.timestamp)
+        /*$("#announcement-header").text("Announcements\n" + announcementData.user)*/
     } catch (err) {
         console.log(err);
     }
