@@ -27,15 +27,14 @@ try:
 except Exception as e:
 	logger.error(f"Failed to initialize Slack client: {e}")
 
-announcements: list[dict[str, str]] = [
-	{
-		"content": "Welcome to Jumpstart!",
-		"user": "Jumpstart",
-		"timestamp": datetime.now(ZoneInfo(CALENDAR_TIMEZONE))
-		.strftime("%I:%M %p")
-		.lstrip("0"),
-	}
-]
+current_announcement: dict[str, str] = {
+	"content": "Welcome to Jumpstart!",
+	"user": "Jumpstart",
+	"timestamp": datetime.now(ZoneInfo(CALENDAR_TIMEZONE))
+	.strftime("%I:%M %p")
+	.lstrip("0")
+}
+
 
 
 def clean_text(raw: str) -> str:
@@ -164,16 +163,10 @@ def get_announcement() -> dict[str, str] | None:
 	Returns the next announcement in the queue.
 
 	Returns:
-		dict | None: The next announcement text and user, or None if there are no announcements.
+		dict[str,str]: The next announcement text and user, or None if there are no announcements.
 	"""
 
-	if len(announcements) == 0:
-		return None
-
-	if len(announcements) == 1:
-		return announcements[0]
-
-	return announcements.pop(0)
+	return current_announcement
 
 
 def add_announcement(announcement_text: str, username: str) -> None:
@@ -184,6 +177,7 @@ def add_announcement(announcement_text: str, username: str) -> None:
 		announcement_text (str): The text of the announcement to be added.
 		user_id (str): The user_id of the person
 	"""
+	global current_announcement
 
 	if announcement_text is None or announcement_text.strip() == "":
 		logger.warning("Attempted to add empty announcement, skipping!")
@@ -198,4 +192,4 @@ def add_announcement(announcement_text: str, username: str) -> None:
 		"timestamp": current_time,
 	}
 
-	announcements.append(new_addition)
+	current_announcement = new_addition
