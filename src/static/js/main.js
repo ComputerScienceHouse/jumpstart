@@ -71,6 +71,41 @@ function setNewPageTheme(newTheme) {
     document.body.classList.toggle(newTheme);
 }
 
+function createCalendarEvent(headerText, contentText) {
+    const container = document.createElement("div");
+    container.className = "calendar-event-container-lvl2";
+    
+    const headerLabel = document.createElement("span");
+    headerLabel.className = "calendar-text-date";
+    headerLabel.textContent = headerText;
+    container.appendChild(headerLabel);
+
+    container.appendChild(document.createElement("br"));
+
+    const contentLabel = document.createElement("span");
+    contentLabel.className = "calendar-text";
+    contentLabel.textContent = contentText;
+    container.appendChild(contentLabel);
+
+    return container;
+}
+
+async function generateCalendar(calData) {
+
+    const calendar = document.getElementById('calendar');
+    calendar.replaceChildren();
+    calendar.appendChild(document.createElement("br"));
+
+    for (const event of calData) {
+        const newEvent = createCalendarEvent(event.header, event.content);
+        calendar.appendChild(newEvent);
+
+        const bracket = document.createElement("hr");
+        bracket.className = "calendar-border";
+        calendar.appendChild(bracket);
+    }
+}
+
 async function longUpdate() {
     const date = new Date();
     const hour = date.getHours();
@@ -107,7 +142,7 @@ async function longUpdate() {
 
         const res = await fetch('/api/calendar', { method: 'GET', mode: 'cors' });
         const data = await res.json();
-        $("#calendar").html(data.data);
+        await generateCalendar(data.data);
     } catch (err) {
         console.log(err);
     }
@@ -121,7 +156,7 @@ async function mediumUpdate() {
         ]);
         const wikiData = await wikiRes.json();
         const announcementData = await announcementRes.json();
-        $("#wikipageheader").text(wikiData.page)
+        $("#wikipageheader").text("csh/Wikithoughts - "  + wikiData.page)
         $("#wikipagetext").text(wikiData.content);
         $("#announcement").text(announcementData.content.substring(0, 910));
         $("#announcement-stamp").text(announcementData.user + " - " + announcementData.timestamp)

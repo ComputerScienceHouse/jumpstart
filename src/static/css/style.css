@@ -165,16 +165,6 @@ body{
     white-space: pre-line;
 }
 
-.wikithoughts-page-name-header{
-    color: var(--panel-header-text-color);
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 20px;
-    text-align: left;
-    white-space: pre-line;
-    display: block;
-    font-style: italic;
-}
-
 .wikithoughts-text-body{
     color:var(--panel-body-text-color);
     font-family: 'Courier New', Courier, monospace;
