@@ -25,10 +25,10 @@ async def get_calendar() -> JSONResponse:
 		JSONResponse: A JSON response containing the calendar data.
 	"""
 
-	events: dict[str, str] = {}
+	events: list[dict[str, str]] = []
 
 	try:
-		get_future_events_ical: tuple[
+		get_future_events_ical: list[
 			cshcalendar.CalendarInfo
 		] = await cshcalendar.get_future_events()
 		events = cshcalendar.format_events(get_future_events_ical)
@@ -36,7 +36,7 @@ async def get_calendar() -> JSONResponse:
 		logger.error(f"Error fetching calendar events: {e}")
 		return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
-	return JSONResponse(events)
+	return JSONResponse({"data": events})
 
 
 @router.get("/announcement")

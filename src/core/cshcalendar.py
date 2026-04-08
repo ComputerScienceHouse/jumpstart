@@ -160,7 +160,7 @@ def calendar_to_html(seg_header: str, seg_content: str) -> str:
 	return ret_string
 
 
-def format_events(events: tuple[CalendarInfo]) -> dict[str, str]:
+def format_events(events: list[CalendarInfo]) -> list[dict[str, str]]:
 	"""
 	Formats a parsed list of CalendarInfos, and returns the HTML required for front end
 
@@ -172,18 +172,15 @@ def format_events(events: tuple[CalendarInfo]) -> dict[str, str]:
 	"""
 
 	current_date: date = datetime.now(ZoneInfo(CALENDAR_TIMEZONE))
-	final_events: str = "<br>"
 
 	if not events:
-		final_events += BORDER_STRING
+		return {"data": [{"header": ":(", "content": "No Events on the Calendar"}]}
 
-		final_events += calendar_to_html(":(", "No Events on the Calendar")
-
-		final_events += BORDER_STRING
-
-		return {"data": final_events}
+	formatted_list: list[dict[str, str]] = []
 
 	for event in events:
+		content_dict: dict[str, str] = {}
+
 		event_cur_happening: bool = event.date < current_date
 		if event_cur_happening:
 			formatted: str = (
@@ -191,14 +188,14 @@ def format_events(events: tuple[CalendarInfo]) -> dict[str, str]:
 				if event.location
 				else "Happening Now!"
 			)
-			final_events += calendar_to_html(formatted, event.name)
+			content_dict["header"] = formatted
+			content_dict["content"] = str(event.name)
 		else:
-			final_events += calendar_to_html(
-				time_humanizer(current_date, event.date), event.name
-			)
+			content_dict["header"] = time_humanizer(current_date, event.date)
+			content_dict["content"] = str(event.name)
 
-		final_events += BORDER_STRING
-	return {"data": final_events}
+		formatted_list.append(content_dict)
+	return formatted_list
 
 
 async def rebuild_calendar() -> None:
