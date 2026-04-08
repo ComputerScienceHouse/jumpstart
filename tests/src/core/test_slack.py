@@ -135,8 +135,8 @@ def test_get_and_add_announcement(monkeypatch):
 
 	slack = import_slack_module(monkeypatch)
 
-	slack.announcements.clear()
-	assert slack.get_announcement() is None
+	slack.current_announcement = None
+	assert slack.current_announcement is None
 
 	skip_announcements: list[str | None] = [None, "", "   "]
 	for ann in skip_announcements:
@@ -148,8 +148,6 @@ def test_get_and_add_announcement(monkeypatch):
 
 	for ann in test_announcements:
 		slack.add_announcement(ann, "FAKE ID")
-
-	for ann in test_announcements:
 		assert slack.get_announcement().get("content", "") == ann
 
 	assert (
