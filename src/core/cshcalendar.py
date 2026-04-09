@@ -54,7 +54,7 @@ HUMANIZER_CHECKS: dict[int, str] = {
 	(WEEK - DAY): f"In %{DAY}% Days",
 }
 
-BORDER_STRING: str = "<hr style='border: 1px #B0197E solid;'>"
+BORDER_STRING: str = '<hr class="calendar-border">'
 TIME_PATTERN = re.compile(r"%([^%]+)%")
 
 
@@ -89,6 +89,7 @@ def ceil_division(num: int, den: int) -> int:
 	Returns:
 		int: the result of the operation
 	"""
+
 	return (num + den - 1) // den
 
 
@@ -113,6 +114,7 @@ def time_humanizer(current_time: datetime, event_time: datetime) -> str:
 		Returns:
 			str: The newly formatted string
 		"""
+
 		num = int(match.group(1))
 		return str(round(time_before_event / num))
 
@@ -134,30 +136,7 @@ def time_humanizer(current_time: datetime, event_time: datetime) -> str:
 
 	return TIME_PATTERN.sub(repl, unformatted_string)
 
-
-def calendar_to_html(seg_header: str, seg_content: str) -> str:
-	"""
-	Formats a header and content into the HTML for the calendar front end
-
-	Args:
-		seg_header (str): The header of the calendar segment
-		seg_content (str): The content in the calendar segment
-
-	Returns:
-		str:
-	"""
-	ret_string: str = (
-		"""<div class='calendar-event-container-lvl2'><span class='calendar-text-date'> """
-		+ seg_header
-		+ """ </span><br>"""
-	)
-	ret_string += (
-		"<span class='calendar-text' id='calendar'>" + seg_content + "</span></div>"
-	)
-	return ret_string
-
-
-def format_events(events: tuple[CalendarInfo]) -> dict[str, str]:
+def format_events(events: list[CalendarInfo]) -> list[dict[str, str]]:
 	"""
 	Formats a parsed list of CalendarInfos, and returns the HTML required for front end
 
@@ -165,22 +144,19 @@ def format_events(events: tuple[CalendarInfo]) -> dict[str, str]:
 		events: The list of CalendarInfos to be formatted
 
 	Returns:
-		dict: Returns a dictionary with the "data" key mapping to the HTML data.
+		list[dict[str, str]]: Returns a dictionary with the "data" key mapping to a list of dictionarys of each event.
 	"""
 
 	current_date: date = datetime.now(ZoneInfo(CALENDAR_TIMEZONE))
-	final_events: str = "<br>"
 
 	if not events:
-		final_events += BORDER_STRING
+		return {"data": [{"header": ":(", "content": "No Events on the Calendar"}]}
 
-		final_events += calendar_to_html(":(", "No Events on the Calendar")
-
-		final_events += BORDER_STRING
-
-		return {"data": final_events}
+	formatted_list: list[dict[str, str]] = []
 
 	for event in events:
+		content_dict: dict[str, str] = {}
+
 		event_cur_happening: bool = event.date < current_date
 		if event_cur_happening:
 			formatted: str = (
@@ -188,21 +164,24 @@ def format_events(events: tuple[CalendarInfo]) -> dict[str, str]:
 				if event.location
 				else "Happening Now!"
 			)
-			final_events += calendar_to_html(formatted, event.name)
+			content_dict["header"] = formatted
+			content_dict["content"] = str(event.name)
 		else:
-			final_events += calendar_to_html(
-				time_humanizer(current_date, event.date), event.name
-			)
+			content_dict["header"] = time_humanizer(current_date, event.date)
+			content_dict["content"] = str(event.name)
 
-		final_events += BORDER_STRING
-	return {"data": final_events}
+		formatted_list.append(content_dict)
+	return formatted_list
 
 
 async def rebuild_calendar() -> None:
 	"""
 	Fetches and rebuilds the global calendar cache. This does NOT return a new cache, but changes the global calendar cache
 	"""
+
 	global calendar_cache, cal_last_update, cal_constructed_event
+
+	current_time: datetime = datetime.now(ZoneInfo(CALENDAR_TIMEZONE))
 	try:
 		cal_constructed_event.clear()
 		found_events: set[CalendarInfo] = set()
@@ -210,8 +189,6 @@ async def rebuild_calendar() -> None:
 		response.raise_for_status()
 
 		cal: Calendar = Calendar.from_ical(response.content)
-
-		current_time: datetime = datetime.now(ZoneInfo(CALENDAR_TIMEZONE))
 
 		fetched_daily_events: list[Event] = recurring_ical_events.of(cal).between(
 			current_time, current_time + timedelta(days=CALENDAR_OUTLOOK_DAYS)
@@ -257,7 +234,7 @@ async def get_future_events() -> list[CalendarInfo]:
 	custom object has name, date and the location
 
 	Returns:
-		list: A list of CalendarInfo objects
+		list[CalendarInfo]: A list of CalendarInfo objects
 	"""
 
 	global \
@@ -314,10 +291,9 @@ async def get_future_events() -> list[CalendarInfo]:
 
 		if cal_correct_length:
 			logger.info("Calendar cache is full length, rebuilding async!")
-			asyncio.create_task(
-				rebuild_calendar()
-			)  # Calendar is correct length, we can just run this in the background
-			# Make it a variable for GC purposes? idk sonarqube told me to do it
+			async with asyncio.TaskGroup() as taskGroup:
+				taskGroup.create_task(rebuild_calendar())
+				# Calendar is correct length, we can just run this in the background
 		else:
 			logger.info("Calendar cache is NOT full length, yielding rebuild!")
 			await rebuild_calendar()
@@ -333,6 +309,7 @@ async def close_client() -> None:
 	Closes the calendar's HTTPX client, logs if the event loops has been
 	closed prior to the function being called
 	"""
+
 	global cshcal_client
 	try:
 		await cshcal_client.aclose()

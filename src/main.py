@@ -27,8 +27,10 @@ logger: Logger = getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 	logger.info("Starting up the Jumpstart application!")
-	asyncio.create_task(cshcalendar.rebuild_calendar())
+	async with asyncio.TaskGroup() as tg:
+		tg.create_task(cshcalendar.rebuild_calendar())
 	await wikithoughts.auth_bot()
+
 	yield
 	logger.info("Shutting down the Jumpstart application!")
 	await cshcalendar.close_client()
@@ -63,8 +65,7 @@ else:
 	logger.warning("Documentation directory not found, skipping documentation setup!")
 
 logger.info("Importing API endpoints!")
-# app.include_router(endpoints.router, prefix="/api")
-app.include_router(endpoints.router)
+app.include_router(endpoints.router, prefix="/api")
 
 logger.info("Finished setting up the application!")
 

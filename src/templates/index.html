@@ -15,11 +15,13 @@
     </div>
     <div class="row justify-content-around">
         <div class="col-md-10">
-            <iframe class="datadog" id="datadog" scrolling="no" frameborder="0" src="https://p.datadoghq.com/sb/44f16805b-4c2038873e353ef6fbb5cd49d9d2b1ac?theme=light&tv_mode=true&live=true?"></iframe>
+            <iframe class="datadog" id="datadog" scrolling="no" frameborder="0" src="https://p.datadoghq.com/sb/44f16805b-4c2038873e353ef6fbb5cd49d9d2b1ac?theme=dark&tv_mode=true&live=true?"></iframe>
             <div class="announcements mt-3">
                 <div class="panel panel-primary">
                     <div class="panel-heading">
-                        <b><span class="announcements-text-header">Announcements</span></b>
+                        <b><span class="announcements-text-header" id="announcement-header">Recent Announcement:</span></b>
+                        <b><span class="announcements-stamp-header" id="announcement-stamp">N/A/span></b>
+
                     </div>
                     <div class="panel-body">
                         <div class="plug-body">
@@ -29,15 +31,15 @@
                 </div>
             </div>
             <div class="weatherwidget mt-3">
-                <a class="weatherwidget-io" 
-                    id="weather-image" 
-                    href="https://forecast7.com/en/43d16n77d61/rochester/?unit=us" 
-                    data-label_1="ROCHESTER" 
-                    data-label_2="WEATHER" 
-                    data-font="Fira Sans" 
-                    data-icons="Climacons Animated" 
-                    data-days="100" 
-                    data-theme="kitty">
+                <a class="weatherwidget-io"
+                    id="weather-image"
+                    href="https://forecast7.com/en/43d16n77d61/rochester/?unit=us"
+                    data-label_1="ROCHESTER"
+                    data-label_2="WEATHER"
+                    data-font="Fira Sans"
+                    data-icons="Climacons Animated"
+                    data-days="100"
+                    data-theme="dark">
                     ROCHESTER WEATHER</a>
             </div>
             <script type="text/javascript">
@@ -55,11 +57,12 @@
             <div class="wikithoughts">
                 <div class="panel panel-primary">
                     <div class="panel-heading">
-                        <b><span class="wikithoughts-text-header" id="wikipageheader">Wiki Page - N/A</span></b>
+                        <b><span class="wikithoughts-text-header" id="wikipageheader">csh/Wikithoughts:</span></b>
                     </div>
                     <div class="panel-body">
                         <div class="plug-body">
                             <b><span class="wikithoughts-text-body" id="wikipagetext">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</span></b>
+                            
                         </div>
                     </div>
                 </div>
@@ -73,4 +76,5 @@
     </div>
 </div>
 <script src="https://weatherwidget.io/js/widget.min.js" integrity="sha384-z1SrZstAkfpo40+eVsXy73T2tzbGOviy6svjVLsoiZvGhs2mgIMzFdWh1YSuoH9D" crossorigin="anonymous"></script>
+<script src="{{ url_for('static', path='js/main.js') }}"></script>
 {% endblock %}
