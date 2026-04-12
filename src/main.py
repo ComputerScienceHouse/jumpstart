@@ -27,8 +27,7 @@ logger: Logger = getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 	logger.info("Starting up the Jumpstart application!")
-	async with asyncio.TaskGroup() as tg:
-		tg.create_task(cshcalendar.rebuild_calendar())
+	asyncio.create_task(cshcalendar.rebuild_calendar())
 	await wikithoughts.auth_bot()
 
 	yield

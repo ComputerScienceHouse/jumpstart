@@ -46,9 +46,57 @@ def test_clean_text_and_convert_response(monkeypatch):
 	assert slack.convert_user_response_to_bool(yes_payload) is True
 	assert slack.convert_user_response_to_bool(no_payload) is False
 	# malformed payload
-	assert slack.convert_user_response_to_bool({}) is False
+	assert slack.convert_user_response_to_bool(True) is False
 
 
+def test_get_username(monkeypatch):
+	"""
+	Test the get_username function in the slack module.
+
+	Args:
+	    monkeypatch: The pytest monkeypatch fixture.
+	"""
+	slack = import_slack_module(monkeypatch)
+
+	class FakeClient():
+		def __init__(self,display_name=None,real_name=None,name=None):
+			self.display_name:str | None = display_name
+			self.real_name:str | None = real_name
+			self.name:str | None = name
+
+		async def users_info(self, user):
+			return {
+				"ok": True,
+				"user": {
+					"profile":{
+						"display_name": self.display_name 
+					},
+					"real_name": self.real_name,
+					"name": self.name,
+				},
+			}
+
+	#Test Display Name
+	monkeypatch.setattr(slack, "client", FakeClient(display_name="DisplayName"))
+	username = asyncio.run(slack.get_username(user_id=""))
+	assert username == "DisplayName"
+
+	#Test Real Name
+	monkeypatch.setattr(slack, "client", FakeClient(real_name="RealName"))
+	username = asyncio.run(slack.get_username(user_id=""))
+	assert username == "RealName"
+
+	#Test Account Name
+	monkeypatch.setattr(slack, "client", FakeClient(name="AccountName"))
+	username = asyncio.run(slack.get_username(user_id=""))
+	assert username == "AccountName"
+
+	# Test Unknown
+	monkeypatch.setattr(slack, "client", FakeClient())
+	username = asyncio.run(slack.get_username(user_id=""))
+	assert username == "Unknown"
+
+	# Test Failure
 def test_gather_emojis_success_and_failure(monkeypatch):
 	"""
 	Test the gather_emojis function in the slack module.
@@ -106,6 +154,8 @@ def test_request_upload_via_dm_success_and_exception(monkeypatch):
 			recorded["channel"] = channel
 			recorded["text"] = text
 			recorded["blocks"] = blocks
+
+	asyncio.run(slack.request_upload_via_dm("U123", "Announcement!"))
 
 	monkeypatch.setattr(slack, "client", FakeClient())
 
