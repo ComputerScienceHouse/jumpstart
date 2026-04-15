@@ -32,9 +32,8 @@ current_announcement: dict[str, str] = {
 	"user": "Jumpstart",
 	"timestamp": datetime.now(ZoneInfo(CALENDAR_TIMEZONE))
 	.strftime("%I:%M %p")
-	.lstrip("0")
+	.lstrip("0"),
 }
-
 
 
 def clean_text(raw: str) -> str:
