@@ -92,7 +92,9 @@ async def slack_events(request: Request) -> JSONResponse:
 
 		logger.info("SLACK EVENT: Requesting upload via dm!")
 
-		await asyncio.create_task(slack.request_upload_via_dm(event.get("user", ""), cleaned_text))
+		await asyncio.create_task(
+			slack.request_upload_via_dm(event.get("user", ""), cleaned_text)
+		)
 	except Exception as e:
 		logger.error(f"Error handling Slack event: {e}")
 		return JSONResponse({"status": "error", "message": str(e)})
