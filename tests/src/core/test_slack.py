@@ -5,13 +5,13 @@ import importlib
 
 def import_slack_module(monkeypatch) -> object:
 	"""
-	Helper function to import the slack module after setting the SLACK_API_TOKEN environment variable.
+		Helper function to import the slack module after setting the SLACK_API_TOKEN environment variable.
+	
+		Args:
+		    monkeypatch: The pytest monkeypatch fixture.
 
-	Args:
-	    monkeypatch: The pytest monkeypatch fixture.
-
-	Returns:
-	            object: The imported config module.
+		Returns:
+		            object: The imported config module.
 	"""
 
 	monkeypatch.setenv("SLACK_API_TOKEN", "test-token")
@@ -58,35 +58,33 @@ def test_get_username(monkeypatch):
 	"""
 	slack = import_slack_module(monkeypatch)
 
-	class FakeClient():
-		def __init__(self,display_name=None,real_name=None,name=None):
-			self.display_name:str | None = display_name
-			self.real_name:str | None = real_name
-			self.name:str | None = name
+	class FakeClient:
+		def __init__(self, display_name=None, real_name=None, name=None):
+			self.display_name: str | None = display_name
+			self.real_name: str | None = real_name
+			self.name: str | None = name
 
 		async def users_info(self, user):
 			return {
 				"ok": True,
 				"user": {
-					"profile":{
-						"display_name": self.display_name 
-					},
+					"profile": {"display_name": self.display_name},
 					"real_name": self.real_name,
 					"name": self.name,
 				},
 			}
 
-	#Test Display Name
+	# Test Display Name
 	monkeypatch.setattr(slack, "client", FakeClient(display_name="DisplayName"))
 	username = asyncio.run(slack.get_username(user_id=""))
 	assert username == "DisplayName"
 
-	#Test Real Name
+	# Test Real Name
 	monkeypatch.setattr(slack, "client", FakeClient(real_name="RealName"))
 	username = asyncio.run(slack.get_username(user_id=""))
 	assert username == "RealName"
 
-	#Test Account Name
+	# Test Account Name
 	monkeypatch.setattr(slack, "client", FakeClient(name="AccountName"))
 	username = asyncio.run(slack.get_username(user_id=""))
 	assert username == "AccountName"
@@ -96,7 +94,7 @@ def test_get_username(monkeypatch):
 	username = asyncio.run(slack.get_username(user_id=""))
 	assert username == "Unknown"
 
-	# Test Failure
+
 def test_gather_emojis_success_and_failure(monkeypatch):
 	"""
 	Test the gather_emojis function in the slack module.

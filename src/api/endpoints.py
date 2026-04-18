@@ -2,6 +2,7 @@ from logging import getLogger, Logger
 
 import json
 import httpx
+import asyncio
 
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import JSONResponse
@@ -64,9 +65,8 @@ async def slack_events(request: Request) -> JSONResponse:
 	"""
 
 	try:
-		logger.debug(f"Received Slack event: {await request.body()}")
-
 		body: dict = await request.json()
+		logger.debug(f"Received Slack event: {body}")
 
 		if request.headers.get("content-type") == "application/json":
 			if body.get("type") == "url_verification":
@@ -91,7 +91,10 @@ async def slack_events(request: Request) -> JSONResponse:
 			return JSONResponse({"status": "ignored"})
 
 		logger.info("SLACK EVENT: Requesting upload via dm!")
-		await slack.request_upload_via_dm(event.get("user", ""), cleaned_text)
+
+		await asyncio.create_task(
+			slack.request_upload_via_dm(event.get("user", ""), cleaned_text)
+		)
 	except Exception as e:
 		logger.error(f"Error handling Slack event: {e}")
 		return JSONResponse({"status": "error", "message": str(e)})
