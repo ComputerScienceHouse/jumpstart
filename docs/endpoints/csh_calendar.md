@@ -4,6 +4,7 @@
 
 This API interacts with the CSH Google calendar to pull the number of events set in the .env file to display in the calendar widget on Jumpstart
 
+
 ---
 
 ### Authentication

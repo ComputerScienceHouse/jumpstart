@@ -8,6 +8,12 @@
     --shadow-color: rgb(176,25,126, 0.5); /* Used for the shadow in the calendar */
 }
 
+/* b {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+} */
+
 .theme-dark {
     --panel-header-color: #B0197E;
     --panel-header-text-color: #FFFFFF;

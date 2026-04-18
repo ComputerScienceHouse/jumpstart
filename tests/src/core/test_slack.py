@@ -6,7 +6,7 @@ import importlib
 def import_slack_module(monkeypatch) -> object:
 	"""
 	Helper function to import the slack module after setting the SLACK_API_TOKEN environment variable.
-
+p
 	Args:
 	    monkeypatch: The pytest monkeypatch fixture.
 
@@ -96,7 +96,6 @@ def test_get_username(monkeypatch):
 	username = asyncio.run(slack.get_username(user_id=""))
 	assert username == "Unknown"
 
-	# Test Failure
 def test_gather_emojis_success_and_failure(monkeypatch):
 	"""
 	Test the gather_emojis function in the slack module.
