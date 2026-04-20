@@ -12,7 +12,7 @@ Documentation for the project can be found be appended /docs to the url
 All HTML requests that are sent in the project can be seen by appending /swag
 
 This project uses Python, [FastAPI](https://fastapi.tiangolo.com/), HTML/CSS, and Javascript.
-See it live [here](http://jumpstart-cubed.cs.house/)!
+See it live [here](https://jumpstart.csh.rit.edu)!
 
 ## Installing
 1. Clone and cd into the repo: git clone https://github.com/WeatherGod3218/jumpstartV2
