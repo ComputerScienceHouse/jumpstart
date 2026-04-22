@@ -5,13 +5,13 @@ import importlib
 
 def import_slack_module(monkeypatch) -> object:
 	"""
-		Helper function to import the slack module after setting the SLACK_API_TOKEN environment variable.
-	
-		Args:
-		    monkeypatch: The pytest monkeypatch fixture.
+	Helper function to import the slack module after setting the SLACK_API_TOKEN environment variable.
 
-		Returns:
-		    object: The imported config module.
+	Args:
+	    monkeypatch: The pytest monkeypatch fixture.
+
+	Returns:
+	    object: The imported config module.
 	"""
 
 	monkeypatch.setenv("SLACK_API_TOKEN", "test-token")

@@ -66,7 +66,11 @@ async def slack_events(request: Request) -> JSONResponse:
 
 	try:
 		body: dict = await request.json()
-		logger.debug(f"Received Slack event: {body}")
+		logger.info(f"Received Slack event: {body}")
+
+		if request.headers.get("x-slack-retry-num"):
+			logger.info("SLACK EVENT: Ignoring Slack retry")
+			return JSONResponse({"status": "ignored"})
 
 		if request.headers.get("content-type") == "application/json":
 			if body.get("type") == "url_verification":
@@ -92,7 +96,7 @@ async def slack_events(request: Request) -> JSONResponse:
 
 		logger.info("SLACK EVENT: Requesting upload via dm!")
 
-		await asyncio.create_task(
+		asyncio.create_task(
 			slack.request_upload_via_dm(event.get("user", ""), cleaned_text)
 		)
 	except Exception as e:
