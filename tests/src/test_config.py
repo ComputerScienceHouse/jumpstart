@@ -1,5 +1,5 @@
-import sys
 import importlib
+import sys
 
 
 def import_config_module() -> object:

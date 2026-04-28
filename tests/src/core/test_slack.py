@@ -1,6 +1,6 @@
-import sys
 import asyncio
 import importlib
+import sys
 
 
 def import_slack_module(monkeypatch) -> object:

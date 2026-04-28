@@ -1,13 +1,12 @@
-from logging import getLogger, Logger
-
 import json
-import httpx
+from logging import Logger, getLogger
 
-from fastapi import APIRouter, Request, Form
+import httpx
+from fastapi import APIRouter, Form, Request
 from fastapi.responses import JSONResponse
 
-from core import slack, wikithoughts, cshcalendar
 from config import WATCHED_CHANNELS
+from core import cshcalendar, slack, wikithoughts
 
 logger: Logger = getLogger(__name__)
 router: APIRouter = APIRouter()
@@ -28,9 +27,13 @@ async def get_calendar() -> JSONResponse:
 	events: list[dict[str, str]] = []
 
 	try:
-		get_future_events_ical: list[
-			cshcalendar.CalendarInfo
-		] = await cshcalendar.get_future_events()
+		get_future_events_ical: (
+			list[cshcalendar.CalendarInfo] | None
+		) = await cshcalendar.get_future_events()
+
+		if get_future_events_ical is None:
+			raise Exception("Gathering future events resulted in None")
+
 		events = cshcalendar.format_events(get_future_events_ical)
 	except Exception as e:
 		logger.error(f"Error fetching calendar events: {e}")

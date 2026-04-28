@@ -1,15 +1,14 @@
-import re
-import httpx
-import random
 import asyncio
 import logging
-
-from typing import Pattern
-from itertools import islice
+import random
+import re
 from datetime import datetime, timedelta
+from itertools import islice
+from typing import Pattern
 
-from config import WIKIBOT_PASSWORD, WIKIBOT_USER, WIKI_CATEGORY, WIKI_API
+import httpx
 
+from config import WIKI_API, WIKI_CATEGORY, WIKIBOT_PASSWORD, WIKIBOT_USER
 
 CYCLE_DEBOUNCE_TIME: int = 12  # How long it takes to resfresh wiki titles
 BATCH_SIZE: int = 50  # max titles per request
@@ -17,15 +16,15 @@ REAUTHENTICATE_ATTEMPTS: int = (
 	3  # The amount of times it will attempt to re-authenticare
 )
 
-HEADERS: dict[str, str] = {"User-Agent": "JumpstartFetcher/1.0"}
-AUTH: tuple[str] = (WIKIBOT_USER, WIKIBOT_PASSWORD)
+_HEADERS: dict[str, str] = {"User-Agent": "JumpstartFetcher/1.0"}
+_AUTH: tuple[str, str] = (WIKIBOT_USER, WIKIBOT_PASSWORD)
 
 logger: logging.Logger = logging.getLogger(__name__)
 
 client: httpx.AsyncClient | None = None
 
 try:
-	client = httpx.AsyncClient(headers=HEADERS, auth=AUTH)
+	client = httpx.AsyncClient(headers=_HEADERS, auth=_AUTH)
 except Exception as e:
 	logger.warning(f"Failed to initialize HTTP client for wiki: {e}")
 
@@ -68,7 +67,7 @@ def clean_wikitext(text: str) -> str:
 		str: The cleaned up text string
 	"""
 
-	reg_operations: tuple[Pattern[str]] = (
+	reg_operations: tuple[Pattern[str], ...] = (
 		RE_FILE,
 		RE_IMAGE,
 		RE_LINK,
@@ -218,12 +217,12 @@ def needs_category_refresh(update_time: datetime) -> bool:
 	)
 
 
-def process_category_page(r_json: dict[str, str]) -> tuple[list[str], bool | str]:
+def process_category_page(r_json: dict) -> tuple[list[str], bool | str]:
 	"""
 	Processes a wikithoughts response into a list of title pages
 
 	Args:
-		r_json (dict[str,str]): The JSON from the wiki to be processed
+		r_json: The JSON from the wiki to be processed
 
 	Returns:
 		tuple[list[str], bool | str]: The list of titles from the request, along with a possible continutation if needed
@@ -256,7 +255,19 @@ async def fetch_category_pages(response: httpx.Response) -> list[str]:
 		list[str]: The list of titles to be fetched.
 	"""
 
-	params: dict[str, str] = {
+	if not client:
+		logger.warning(
+			"HTTP client for wiki is not initialized, unable to fetch category pages!"
+		)
+		return []
+
+	if not WIKI_API:
+		logger.warning(
+			"There is no WIKI_API set to make requests, unable to fetch category pages!"
+		)
+		return []
+
+	params: dict[str, str | bool] = {
 		"action": "query",
 		"list": "categorymembers",
 		"cmtitle": f"Category:{WIKI_CATEGORY}",
@@ -269,7 +280,7 @@ async def fetch_category_pages(response: httpx.Response) -> list[str]:
 	failed_authentication_attempts: int = 0
 
 	while True:
-		r_json: dict[str, str] = response.json()
+		r_json: dict = response.json()
 
 		if "error" in r_json and r_json["error"].get("code") in (
 			"readapidenied",
@@ -325,7 +336,14 @@ async def refresh_category_pages() -> list[str]:
 		)
 		return []
 
+	if not WIKI_API:
+		logger.warning(
+			"There is no WIKI_API set to make requests, unable to refresh category pages!"
+		)
+		return []
+
 	global page_title_cache, last_updated_time, queued_pages, shown_pages
+
 	time_now: datetime = datetime.now()
 
 	if not needs_category_refresh(time_now):
@@ -375,6 +393,12 @@ async def refresh_page_dictionary() -> None:
 	if not client:
 		logger.warning(
 			"HTTP client for wiki is not initialized, unable to refresh page dictionary!"
+		)
+		return
+
+	if not WIKI_API:
+		logger.warning(
+			"There is no WIKI_API set to make requests, unable to refresh page dictionary!"
 		)
 		return
 

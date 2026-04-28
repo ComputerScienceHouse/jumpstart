@@ -1,12 +1,13 @@
-from logging import getLogger, Logger
-from datetime import datetime, date, timedelta, time
+import asyncio
+import re
+from datetime import date, datetime, time, timedelta
+from logging import Logger, getLogger
 from zoneinfo import ZoneInfo
 
-from icalendar.cal import Event, Calendar
+import arrow
 import httpx
 import recurring_ical_events
-import arrow
-import re
+from icalendar.cal import Calendar, Event
 
 from config import (
 	CALENDAR_CACHE_REFRESH,
@@ -15,7 +16,6 @@ from config import (
 	CALENDAR_TIMEZONE,
 	CALENDAR_URL,
 )
-import asyncio
 
 calendar_cache: list[CalendarInfo] = []  # The current cache of the calendar
 cal_last_update: date | None = (
@@ -45,7 +45,7 @@ This is used for each "check" from the time humanizer. %TIME% will be replaced w
 WARNING: PERCENTAGE SIGNS WILL TRIGGER A REGEX OPERATION
 WARNING: FOLLOW INSERTION ORDER
 """
-HUMANIZER_CHECKS: dict[int, str] = {
+HUMANIZER_CHECKS: dict[int | float, str] = {
 	MINUTE: "In 1 Minute",
 	(HOUR - MINUTE): f"In %{MINUTE}% Minutes",
 	(HOUR * 1.5): "In 1 Hour",
@@ -67,7 +67,7 @@ class CalendarInfo:
 
 	def __init__(self, name: str, date_time: date, location: str | None = None):
 		self.name: str = name
-		self.date: arrow.arrow = arrow.get(date_time)  # Arrow has way cooler stuff
+		self.date: arrow.Arrow = arrow.get(date_time)  # Arrow has way cooler stuff
 		self.location: str | None = location
 
 	def __eq__(self, other):
@@ -93,7 +93,7 @@ def ceil_division(num: int, den: int) -> int:
 	return (num + den - 1) // den
 
 
-def time_humanizer(current_time: datetime, event_time: datetime) -> str:
+def time_humanizer(current_time: datetime, event_time: arrow.Arrow) -> str:
 	"""
 	Custom humanizer for text to be displayed
 
@@ -118,7 +118,7 @@ def time_humanizer(current_time: datetime, event_time: datetime) -> str:
 		num = int(match.group(1))
 		return str(round(time_before_event / num))
 
-	time_before_event: int = (event_time - current_time).total_seconds()
+	time_before_event: int | float = (event_time - current_time).total_seconds()
 
 	if time_before_event > WEEK:
 		return "Over a Week Away"
@@ -136,6 +136,7 @@ def time_humanizer(current_time: datetime, event_time: datetime) -> str:
 
 	return TIME_PATTERN.sub(repl, unformatted_string)
 
+
 def format_events(events: list[CalendarInfo]) -> list[dict[str, str]]:
 	"""
 	Formats a parsed list of CalendarInfos, and returns the HTML required for front end
@@ -150,7 +151,7 @@ def format_events(events: list[CalendarInfo]) -> list[dict[str, str]]:
 	current_date: date = datetime.now(ZoneInfo(CALENDAR_TIMEZONE))
 
 	if not events:
-		return {"data": [{"header": ":(", "content": "No Events on the Calendar"}]}
+		return [{"header": ":(", "content": "No Events on the Calendar"}]
 
 	formatted_list: list[dict[str, str]] = []
 
@@ -181,6 +182,9 @@ async def rebuild_calendar() -> None:
 
 	global calendar_cache, cal_last_update, cal_constructed_event
 
+	if CALENDAR_URL is None:
+		raise Exception("Calendar URL is None, cant request.")
+
 	current_time: datetime = datetime.now(ZoneInfo(CALENDAR_TIMEZONE))
 	try:
 		cal_constructed_event.clear()
@@ -188,11 +192,11 @@ async def rebuild_calendar() -> None:
 		response: httpx.Response = await cshcal_client.get(CALENDAR_URL, timeout=10)
 		response.raise_for_status()
 
-		cal: Calendar = Calendar.from_ical(response.content)
+		cal: Calendar | None = Calendar.from_ical(response.content)
 
-		fetched_daily_events: list[Event] = recurring_ical_events.of(cal).between(
-			current_time, current_time + timedelta(days=CALENDAR_OUTLOOK_DAYS)
-		)
+		fetched_daily_events: list[Event] | None = recurring_ical_events.of(
+			cal
+		).between(current_time, current_time + timedelta(days=CALENDAR_OUTLOOK_DAYS))
 
 		for event in fetched_daily_events:
 			dt = event.get("DTSTART").dt
@@ -228,7 +232,7 @@ async def rebuild_calendar() -> None:
 	cal_constructed_event.set()
 
 
-async def get_future_events() -> list[CalendarInfo]:
+async def get_future_events() -> list[CalendarInfo] | None:
 	"""
 	Returns the first events up to event maximum within the the calendar outlook day amount
 	custom object has name, date and the location
@@ -243,6 +247,9 @@ async def get_future_events() -> list[CalendarInfo]:
 		header_last_modified, \
 		header_none_match, \
 		cal_constructed_event
+
+	if CALENDAR_URL is None:
+		raise Exception("Calendar URL is None, cant request.")
 
 	if not cal_constructed_event.is_set():
 		await cal_constructed_event.wait()
@@ -261,10 +268,11 @@ async def get_future_events() -> list[CalendarInfo]:
 
 	logger.info("Checking to rebuild CSH Calendar...")
 	try:
-		headers: dict[str, str | None] = {}
+		headers: dict[str, str] = {}
 
 		if header_none_match:
 			headers["If-None-Match"] = header_none_match
+
 		if header_last_modified:
 			headers["If-Modified-Since"] = header_last_modified
 

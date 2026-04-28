@@ -1,21 +1,20 @@
-import re
 import copy
 import json
+import re
+from datetime import datetime
+from logging import Logger, getLogger
+from zoneinfo import ZoneInfo
 
-from logging import getLogger, Logger
-
-from slack_sdk.web.async_client import AsyncWebClient
-from slack_sdk.web.slack_response import SlackResponse
 from slack_sdk.errors import SlackApiError
+from slack_sdk.web.async_client import AsyncWebClient
+from slack_sdk.web.async_slack_response import AsyncSlackResponse
 
 from config import (
-	SLACK_API_TOKEN,
-	SLACK_JUMPSTART_MESSAGE,
-	SLACK_DM_TEMPLATE,
 	CALENDAR_TIMEZONE,
+	SLACK_API_TOKEN,
+	SLACK_DM_TEMPLATE,
+	SLACK_JUMPSTART_MESSAGE,
 )
-from datetime import datetime
-from zoneinfo import ZoneInfo
 
 logger: Logger = getLogger(__name__)
 
@@ -32,9 +31,8 @@ current_announcement: dict[str, str] = {
 	"user": "Jumpstart",
 	"timestamp": datetime.now(ZoneInfo(CALENDAR_TIMEZONE))
 	.strftime("%I:%M %p")
-	.lstrip("0")
+	.lstrip("0"),
 }
-
 
 
 def clean_text(raw: str) -> str:
@@ -67,7 +65,7 @@ async def gather_emojis() -> dict:
 		if client is None:
 			raise ValueError("Slack client is not initialized")
 
-		emoji_request: dict = await client.emoji_list()
+		emoji_request: AsyncSlackResponse = await client.emoji_list()
 		assert emoji_request.get("ok", False)
 
 		emojis = emoji_request.get("emoji", {})
@@ -88,7 +86,10 @@ async def get_username(user_id: str) -> str:
 		str: The username, or an empty string if not applicable
 	"""
 
-	response = await client.users_info(user=user_id)
+	if client is None:
+		raise ValueError("Slack client is not initialized")
+
+	response: AsyncSlackResponse = await client.users_info(user=user_id)
 	user = response.get("user", None)
 
 	if user is None:
@@ -115,7 +116,10 @@ async def request_upload_via_dm(user_id: str, announcement_text: str) -> None:
 		if client is None:
 			raise ValueError("Slack client is not initialized")
 
-		message: dict = copy.deepcopy(SLACK_DM_TEMPLATE)
+		message: list | None = copy.deepcopy(SLACK_DM_TEMPLATE)
+
+		if message is None:
+			raise Exception("Unable to deepcopy dm template.")
 
 		message[0]["text"]["text"] += announcement_text
 		message[1]["elements"][0]["value"] = json.dumps(
