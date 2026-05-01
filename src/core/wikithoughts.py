@@ -8,7 +8,13 @@ from typing import Pattern
 
 import httpx
 
-from config import WIKI_API, WIKI_CATEGORY, WIKIBOT_PASSWORD, WIKIBOT_USER
+from config import (
+	LOGGING_LEVEL,
+	WIKI_API,
+	WIKI_CATEGORY,
+	WIKIBOT_PASSWORD,
+	WIKIBOT_USER,
+)
 
 CYCLE_DEBOUNCE_TIME: int = 12  # How long it takes to resfresh wiki titles
 BATCH_SIZE: int = 50  # max titles per request
@@ -20,6 +26,7 @@ _HEADERS: dict[str, str] = {"User-Agent": "JumpstartFetcher/1.0"}
 _AUTH: tuple[str, str] = (WIKIBOT_USER, WIKIBOT_PASSWORD)
 
 logger: logging.Logger = logging.getLogger(__name__)
+logger.setLevel(LOGGING_LEVEL)
 
 client: httpx.AsyncClient | None = None
 
@@ -132,6 +139,8 @@ async def auth_bot() -> None:
 		)
 		return
 
+	global bot_authenticated
+
 	token_req: httpx.Response = await client.get(
 		WIKI_API,
 		params={"action": "query", "meta": "tokens", "type": "login", "format": "json"},
@@ -153,8 +162,6 @@ async def auth_bot() -> None:
 
 	returned_json: dict = login_req.json()["login"]
 	if returned_json and returned_json["result"] == "Success":
-		global bot_authenticated
-
 		bot_authenticated = True
 		logger.info("Bot was authenticated successfully!")
 	else:
@@ -237,11 +244,10 @@ def process_category_page(r_json: dict) -> tuple[list[str], bool | str]:
 		# Loop to keep everything going
 		if "continue" in r_json:
 			return (titles, r_json["continue"]["cmcontinue"])
-
-		return (titles, False)
 	else:
 		logger.warning(f"Failure in obtaining info, JSON:\n{r_json}")
-		return (titles, False)
+
+	return (titles, False)
 
 
 async def fetch_category_pages(response: httpx.Response) -> list[str]:
@@ -307,7 +313,7 @@ async def fetch_category_pages(response: httpx.Response) -> list[str]:
 			continue
 
 		added, repeat_req = process_category_page(r_json)
-		titles_found += added
+		titles_found.extend(added)
 
 		if repeat_req not in (None, False, ""):
 			params["cmcontinue"] = repeat_req
@@ -349,7 +355,6 @@ async def refresh_category_pages() -> list[str]:
 	if not needs_category_refresh(time_now):
 		return page_title_cache
 
-	titles: list[str] = []
 	params: dict[str, str] = {
 		"action": "query",
 		"list": "categorymembers",
@@ -379,7 +384,7 @@ async def refresh_category_pages() -> list[str]:
 	queued_pages = titles.copy()
 
 	random.shuffle(queued_pages)
-	shown_pages = []
+	shown_pages.clear()
 
 	await refresh_page_dictionary()
 	return page_title_cache
@@ -459,7 +464,7 @@ def reset_queues() -> None:
 
 	queued_pages = shown_pages
 	random.shuffle(queued_pages)
-	shown_pages = []
+	shown_pages.clear()
 
 
 async def get_next_display() -> dict[str, str]:

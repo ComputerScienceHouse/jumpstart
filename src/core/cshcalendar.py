@@ -15,6 +15,7 @@ from config import (
 	CALENDAR_OUTLOOK_DAYS,
 	CALENDAR_TIMEZONE,
 	CALENDAR_URL,
+	LOGGING_LEVEL,
 )
 
 calendar_cache: list[CalendarInfo] = []  # The current cache of the calendar
@@ -31,6 +32,8 @@ cal_constructed_event: asyncio.Event = asyncio.Event()
 cal_constructed_event.clear()
 
 logger: Logger = getLogger(__name__)
+logger.setLevel(LOGGING_LEVEL)
+
 logger.info("Starting up the calendar service!")
 cshcal_client = httpx.AsyncClient()
 
@@ -157,19 +160,16 @@ def format_events(events: list[CalendarInfo]) -> list[dict[str, str]]:
 
 	for event in events:
 		content_dict: dict[str, str] = {}
+		content_dict["content"] = str(event.name)
 
-		event_cur_happening: bool = event.date < current_date
-		if event_cur_happening:
-			formatted: str = (
+		if event.date < current_date:
+			content_dict["header"] = (
 				f"Happening in {event.location}!"
 				if event.location
 				else "Happening Now!"
 			)
-			content_dict["header"] = formatted
-			content_dict["content"] = str(event.name)
 		else:
 			content_dict["header"] = time_humanizer(current_date, event.date)
-			content_dict["content"] = str(event.name)
 
 		formatted_list.append(content_dict)
 	return formatted_list
@@ -194,19 +194,17 @@ async def rebuild_calendar() -> None:
 
 		cal: Calendar | None = Calendar.from_ical(response.content)
 
-		fetched_daily_events: list[Event] | None = recurring_ical_events.of(
-			cal
-		).between(current_time, current_time + timedelta(days=CALENDAR_OUTLOOK_DAYS))
+		fetched_daily_events: list[Event] = recurring_ical_events.of(cal).between(
+			current_time, current_time + timedelta(days=CALENDAR_OUTLOOK_DAYS)
+		)
 
 		for event in fetched_daily_events:
 			dt = event.get("DTSTART").dt
 
 			if isinstance(dt, date) and not isinstance(dt, datetime):
 				dt = datetime.combine(dt, time.min, tzinfo=ZoneInfo(CALENDAR_TIMEZONE))
-
 			elif dt.tzinfo is None:
 				dt = dt.replace(tzinfo=ZoneInfo(CALENDAR_TIMEZONE))
-
 			else:
 				dt = dt.astimezone(ZoneInfo(CALENDAR_TIMEZONE))
 
@@ -218,11 +216,10 @@ async def rebuild_calendar() -> None:
 
 			found_events.add(new_event)
 
-		cal = None
-		fetched_daily_events = None
+		fetched_daily_events.clear()
 	except Exception as e:
 		logger.warning("Failed to rebuild calendar cache! Error:")
-		logger.warning(e)
+		logger.error(e)
 		cal_constructed_event.set()
 
 	cal_last_update = current_time

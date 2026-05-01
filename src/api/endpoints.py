@@ -34,7 +34,7 @@ async def get_calendar() -> JSONResponse:
 		if get_future_events_ical is None:
 			raise Exception("Gathering future events resulted in None")
 
-		events = cshcalendar.format_events(get_future_events_ical)
+		events.extend(cshcalendar.format_events(get_future_events_ical))
 	except Exception as e:
 		logger.error(f"Error fetching calendar events: {e}")
 		return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
@@ -126,8 +126,8 @@ async def message_actions(payload: str = Form(...)) -> JSONResponse:
 				"User approved the announcement, Adding it to the announcement list!"
 			)
 
-			message_object: dict[str, dict] = json.loads(
-				form_json.get("actions", [{}])[0].get("value", '{text:""}')
+			message_object: str | None = json.loads(
+				form_json.get("actions", [{}])[0].get("value", {})
 			).get("text", None)
 
 			user_id = form_json.get("user", {}).get("id")

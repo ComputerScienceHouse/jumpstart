@@ -16,10 +16,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from api import endpoints
-from config import BASE_DIR
+from config import BASE_DIR, LOGGING_LEVEL
 from core import cshcalendar, wikithoughts
 
 logger: Logger = getLogger(__name__)
+logger.setLevel(LOGGING_LEVEL)
 
 
 @asynccontextmanager

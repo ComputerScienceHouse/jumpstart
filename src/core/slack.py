@@ -11,13 +11,14 @@ from slack_sdk.web.async_slack_response import AsyncSlackResponse
 
 from config import (
 	CALENDAR_TIMEZONE,
+	LOGGING_LEVEL,
 	SLACK_API_TOKEN,
 	SLACK_DM_TEMPLATE,
 	SLACK_JUMPSTART_MESSAGE,
 )
 
 logger: Logger = getLogger(__name__)
-
+logger.setLevel(LOGGING_LEVEL)
 
 client: AsyncWebClient | None = None
 
@@ -173,7 +174,7 @@ def get_announcement() -> dict[str, str] | None:
 	return current_announcement
 
 
-def add_announcement(announcement_text: str, username: str) -> None:
+def add_announcement(announcement_text: str | None, username: str) -> None:
 	"""
 	Adds an announcement to the queue.
 

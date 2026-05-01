@@ -1,5 +1,4 @@
 ---
-
 services:
   jumpstart:
     build: .
@@ -7,6 +6,8 @@ services:
     ports:
       - "8000:8000"
     environment:
+      - LOGGING_LEVEL=${LOGGING_LEVEL}
+
       - CALENDAR_URL=${CALENDAR_URL}
       - CALENDAR_OUTLOOK_DAYS=${CALENDAR_OUTLOOK_DAYS}
       - CALENDAR_EVENT_MAXIMUM=${CALENDAR_EVENT_MAXIMUM}
