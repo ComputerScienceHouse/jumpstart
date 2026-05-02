@@ -97,7 +97,7 @@ def get_event_retry_amount(event_id: str) -> int:
 
 	if event_id in event_id_cache:
 		event_id_cache[event_id] += 1
-		return event_id_cache
+		return event_id_cache[event_id]
 
 	event_id_cache[event_id] = 0
 	taskmanager.create_background_task(reset_event_from_cache(event_id))
@@ -206,7 +206,8 @@ async def process_slack_events(request: Request) -> dict[str, str]:
 			logger.info(
 				f"SLACK EVENT: Retried event for {body.get('event_id', None)} {event_amounts} time(s)!"
 			)
-			return
+			return ({"status": "success"}, 200)
+
 
 		# Challenge from Bot Authentication
 		if request.headers.get("content-type") == "application/json":
@@ -249,12 +250,12 @@ async def process_slack_message_actions(payload: str):
 		form_json: dict = json.loads(payload)
 		response_url = form_json.get("response_url")
 
-		event_amounts: int = get_event_retry_amount(form_json.get("event_id", None))
+		event_amounts: int = get_event_retry_amount(form_json.get("trigger_id", None))
 		if event_amounts > 0:
 			logger.info(
-				f"SLACK MESSAGE ACTION: Retried event for {form_json.get('event_id', None)} {event_amounts} time(s)!"
+				f"SLACK MESSAGE ACTION: Retried event for {form_json.get('trigger_id', None)} {event_amounts} time(s)!"
 			)
-			return
+			return {"status": "ignored"}
 
 		if form_json.get("type") != "block_actions":
 			return ({}, 200)
