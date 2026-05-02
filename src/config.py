@@ -55,6 +55,12 @@ match _raw_logging_level:
 		LOGGING_LEVEL = logging.DEBUG
 	case "WARN":
 		LOGGING_LEVEL = logging.WARN
+	case "ERROR":
+		LOGGING_LEVEL = logging.ERROR
+	case "FATAL":
+		LOGGING_LEVEL = logging.FATAL
+	case "CRITICAL":
+		LOGGING_LEVEL = logging.CRITICAL
 
 SLACK_API_TOKEN: str | None = _get_env_variable("SLACK_API_TOKEN", None)
 SLACK_JUMPSTART_MESSAGE: str = "Would you like to post this message to Jumpstart?"
