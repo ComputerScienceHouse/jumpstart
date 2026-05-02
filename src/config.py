@@ -39,6 +39,8 @@ BASE_DIR: str = os.path.dirname(os.path.abspath(__file__))
 
 SLACK_API_TOKEN: str | None = _get_env_variable("SLACK_API_TOKEN", None)
 SLACK_JUMPSTART_MESSAGE: str = "Would you like to post this message to Jumpstart?"
+SLACK_SIGNING_SECRET: str = _get_env_variable("SLACK_SIGNING_SECRET", None)
+
 WATCHED_CHANNELS: tuple[str] = tuple(
 	_get_env_variable("WATCHED_CHANNELS", "").split(",")
 )
