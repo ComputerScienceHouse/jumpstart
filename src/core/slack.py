@@ -101,6 +101,7 @@ def get_event_retry_amount(event_id: str) -> int:
 
 	event_id_cache[event_id] = 0
 	taskmanager.create_background_task(reset_event_from_cache(event_id))
+	return event_id_cache[event_id]
 
 
 async def gather_emojis() -> dict:
