@@ -1,20 +1,12 @@
 from logging import getLogger, Logger
 
-import json
-import httpx
-import asyncio
-
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import JSONResponse
 
 from core import slack, wikithoughts, cshcalendar
-from config import WATCHED_CHANNELS
 
 logger: Logger = getLogger(__name__)
 router: APIRouter = APIRouter()
-
-ACCEPT_MESSAGE: str = "Posting right now :^)"
-DENY_MESSAGE: str = "Okay :( maybe next time"
 
 
 @router.get("/calendar")
@@ -64,46 +56,7 @@ async def slack_events(request: Request) -> JSONResponse:
 		JSONResponse: A JSON response indicating the result of the event handling.
 	"""
 
-	try:
-		body: dict = await request.json()
-		logger.info(f"Received Slack event: {body}")
-
-		if request.headers.get("x-slack-retry-num"):
-			logger.info("SLACK EVENT: Ignoring Slack retry")
-			return JSONResponse({"status": "ignored"})
-
-		if request.headers.get("content-type") == "application/json":
-			if body.get("type") == "url_verification":
-				logger.info("SLACK EVENT: Was a challenge!")
-				return JSONResponse({"challenge": body.get("challenge")})
-
-		if not body:
-			logger.debug("SLACK EVENT: Was a challenge, with no body")
-			return JSONResponse({"challenge": body.get("challenge")})
-
-		event: dict = body.get("event", {})
-		cleaned_text: str = slack.clean_text(event.get("text", ""))
-
-		if event.get("subtype", None) is not None:
-			logger.info("SLACK EVENT: Had no subtype, ignoring it")
-			return JSONResponse({"status": "ignored"})
-
-		if event.get("channel", None) not in WATCHED_CHANNELS:
-			logger.info(
-				"SLACK EVENT: Message was not in a Watched Channel, ignoring it"
-			)
-			return JSONResponse({"status": "ignored"})
-
-		logger.info("SLACK EVENT: Requesting upload via dm!")
-
-		asyncio.create_task(
-			slack.request_upload_via_dm(event.get("user", ""), cleaned_text)
-		)
-	except Exception as e:
-		logger.error(f"Error handling Slack event: {e}")
-		return JSONResponse({"status": "error", "message": str(e)})
-
-	return JSONResponse({"status": "success"})
+	return JSONResponse(slack.process_slack_events(request))
 
 
 @router.post("/slack/message_actions")
@@ -118,48 +71,8 @@ async def message_actions(payload: str = Form(...)) -> JSONResponse:
 		JSONResponse: A JSON response indicating the result of the action.
 	"""
 
-	try:
-		form_json: dict = json.loads(payload)
-		response_url = form_json.get("response_url")
-
-		if form_json.get("type") != "block_actions":
-			return JSONResponse({}, status_code=200)
-
-		if slack.convert_user_response_to_bool(form_json):
-			logger.info(
-				"User approved the announcement, Adding it to the announcement list!"
-			)
-
-			message_object: dict[str, dict] = json.loads(
-				form_json.get("actions", [{}])[0].get("value", '{text:""}')
-			).get("text", None)
-
-			user_id = form_json.get("user", {}).get("id")
-
-			username: str = await slack.get_username(user_id=user_id)
-			username = username[:40]
-
-			slack.add_announcement(message_object, username)
-
-			if response_url:
-				async with httpx.AsyncClient() as client:
-					await client.post(
-						response_url,
-						json={"text": ACCEPT_MESSAGE, "replace_original": True},
-					)
-		else:
-			if response_url:
-				async with httpx.AsyncClient() as client:
-					await client.post(
-						response_url,
-						json={"text": DENY_MESSAGE, "replace_original": True},
-					)
-
-	except Exception as e:
-		logger.error(f"Error in message_actions: {e}")
-		return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
-
-	return JSONResponse({"status": "success"}, status_code=200)
+	response_dict, status_code = slack.process_slack_message_actions(payload)
+	return JSONResponse(response_dict, status_code=status_code)
 
 
 @router.get("/wikithought")
