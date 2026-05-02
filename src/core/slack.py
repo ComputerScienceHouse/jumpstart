@@ -96,7 +96,7 @@ def get_event_retry_amount(event_id: str) -> int:
 	global event_id_cache
 
 	if event_id in event_id_cache:
-		event_id_cache += 1
+		event_id_cache[event_id] += 1
 		return event_id_cache
 
 	event_id_cache[event_id] = 0
