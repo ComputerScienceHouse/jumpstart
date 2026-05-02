@@ -159,8 +159,7 @@ def format_events(events: list[CalendarInfo]) -> list[dict[str, str]]:
 	formatted_list: list[dict[str, str]] = []
 
 	for event in events:
-		content_dict: dict[str, str] = {}
-		content_dict["content"] = str(event.name)
+		content_dict: dict[str, str] = {"content": str(event.name)}
 
 		if event.date < current_date:
 			content_dict["header"] = (

@@ -121,6 +121,8 @@ async def message_actions(payload: str = Form(...)) -> JSONResponse:
 		if form_json.get("type") != "block_actions":
 			return JSONResponse({}, status_code=200)
 
+		message: str = DENY_MESSAGE
+
 		if slack.convert_user_response_to_bool(form_json):
 			logger.info(
 				"User approved the announcement, Adding it to the announcement list!"
@@ -136,20 +138,14 @@ async def message_actions(payload: str = Form(...)) -> JSONResponse:
 			username = username[:40]
 
 			slack.add_announcement(message_object, username)
+			message: str = ACCEPT_MESSAGE
 
-			if response_url:
-				async with httpx.AsyncClient() as client:
-					await client.post(
-						response_url,
-						json={"text": ACCEPT_MESSAGE, "replace_original": True},
-					)
-		else:
-			if response_url:
-				async with httpx.AsyncClient() as client:
-					await client.post(
-						response_url,
-						json={"text": DENY_MESSAGE, "replace_original": True},
-					)
+		if response_url:
+			async with httpx.AsyncClient() as client:
+				await client.post(
+					response_url,
+					json={"text": message, "replace_original": True},
+				)
 
 	except Exception as e:
 		logger.error(f"Error in message_actions: {e}")

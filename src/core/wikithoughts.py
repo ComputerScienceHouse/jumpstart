@@ -415,7 +415,7 @@ async def refresh_page_dictionary() -> None:
 	results: dict[str, str] = {}
 	tasks: list = []
 	for batch in batch_iterable(page_title_cache, BATCH_SIZE):
-		params = {
+		params: dict[str, str | bool] = {
 			"action": "query",
 			"prop": "revisions",
 			"rvprop": "content",
