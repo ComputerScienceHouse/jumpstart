@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 
 from core import slack, wikithoughts, cshcalendar
 import json
+import urllib
 
 logger: Logger = getLogger(__name__)
 router: APIRouter = APIRouter()
@@ -75,7 +76,7 @@ async def slack_events(request: Request) -> JSONResponse:
 
 
 @router.post("/slack/message_actions")
-async def message_actions(request: Request, payload: str = Form(...)) -> JSONResponse:
+async def message_actions(request: Request) -> JSONResponse:
 	"""
 	Handles slack message action.
 
@@ -91,6 +92,12 @@ async def message_actions(request: Request, payload: str = Form(...)) -> JSONRes
 	if not (slack.is_valid_slack_request(request, raw_body)):
 		logger.warning(f"Received a Fake Slack Message Action! {raw_body}")
 		return JSONResponse({"error": "Invalid signature"}, status_code=403)
+
+	form_data = urllib.parse.parse_qs(raw_body.decode("utf-8"))
+	payload = form_data.get("payload", [None])[0]
+
+	if payload is None:
+		return JSONResponse({"error": "Missing payload"}, status_code=400)
 
 	response_dict, status_code = await slack.process_slack_message_actions(payload)
 	return JSONResponse(response_dict, status_code=status_code)
