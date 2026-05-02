@@ -7,6 +7,7 @@ from logging import getLogger, Logger
 from slack_sdk.web.async_client import AsyncWebClient
 from slack_sdk.web.slack_response import SlackResponse
 from slack_sdk.errors import SlackApiError
+from slack_sdk.signature import SignatureVerifier
 
 from modules import taskmanager
 
@@ -16,6 +17,7 @@ from config import (
 	SLACK_DM_TEMPLATE,
 	CALENDAR_TIMEZONE,
 	WATCHED_CHANNELS,
+	SLACK_SIGNING_SECRET,
 )
 
 from datetime import datetime
@@ -38,11 +40,6 @@ DENY_MESSAGE: str = (
 	"RAHHHHHHHHHHHHHHHHHHHHHHHH HOW DARE YOU :skeleton-shield-banging-here:"
 )
 
-try:
-	client = AsyncWebClient(token=SLACK_API_TOKEN)
-except Exception as e:
-	logger.error(f"Failed to initialize Slack client: {e}")
-
 current_announcement: dict[str, str] = {
 	"content": "Welcome to Jumpstart!",
 	"user": "Jumpstart",
@@ -50,6 +47,41 @@ current_announcement: dict[str, str] = {
 	.strftime("%I:%M %p")
 	.lstrip("0"),
 }
+
+
+_slack_signature_verifier: SignatureVerifier | None = (
+	SignatureVerifier(SLACK_SIGNING_SECRET) if SLACK_SIGNING_SECRET else None
+)
+
+try:
+	client = AsyncWebClient(token=SLACK_API_TOKEN)
+except Exception as e:
+	logger.error(f"Failed to initialize Slack client: {e}")
+
+
+def is_valid_slack_request(request: Request, raw_body: bytes) -> bool:
+	"""
+	Validates Slack's request signature using the signing secret.
+
+	Args:
+	    request (Request): The request to be checked
+		raw_body (bytes): The raw body
+
+	Returns
+	    bool: Whether or not it's verified
+	"""
+
+	if _slack_signature_verifier is None:
+		logger.error("Slack signing secret is not configured")
+		return False
+
+	try:
+		return _slack_signature_verifier.is_valid_request(
+			body=raw_body,
+			headers=dict(request.headers),
+		)
+	except TypeError, ValueError:
+		return False
 
 
 def clean_text(raw: str) -> str:
@@ -186,7 +218,7 @@ async def request_upload_via_dm(user_id: str, announcement_text: str) -> None:
 		logger.error(f"Error messaging user {user_id}: {e}")
 
 
-async def process_slack_events(request: Request) -> dict[str, str]:
+async def process_slack_events(body: dict) -> dict[str, str]:
 	"""
 	Processes a slack event, logging and returning the result from the event
 
@@ -198,7 +230,6 @@ async def process_slack_events(request: Request) -> dict[str, str]:
 	"""
 
 	try:
-		body: dict = await request.json()
 		logger.info(f"Received Slack event: {body}")
 
 		event_amounts: int = get_event_retry_amount(body.get("event_id", None))
@@ -207,12 +238,6 @@ async def process_slack_events(request: Request) -> dict[str, str]:
 				f"SLACK EVENT: Retried event for {body.get('event_id', None)} {event_amounts} time(s)!"
 			)
 			return ({"status": "success"}, 200)
-
-		# Challenge from Bot Authentication
-		if request.headers.get("content-type") == "application/json":
-			if body.get("type") == "url_verification":
-				logger.info("SLACK EVENT: Was a challenge!")
-				return {"challenge": body.get("challenge")}
 
 		event: dict = body.get("event", {})
 
@@ -267,7 +292,9 @@ async def process_slack_message_actions(payload: str):
 			user_id = form_json.get("user", {}).get("id")
 
 			username: str = await get_username(user_id)
-			username = username[:40] # Only get the first 40 characters so it fits on a single line
+			username = username[
+				:40
+			]  # Only get the first 40 characters so it fits on a single line
 
 			add_announcement(message_object, username)
 

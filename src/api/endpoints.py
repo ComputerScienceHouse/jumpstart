@@ -4,6 +4,7 @@ from fastapi import APIRouter, Request, Form
 from fastapi.responses import JSONResponse
 
 from core import slack, wikithoughts, cshcalendar
+import json
 
 logger: Logger = getLogger(__name__)
 router: APIRouter = APIRouter()
@@ -56,11 +57,25 @@ async def slack_events(request: Request) -> JSONResponse:
 		JSONResponse: A JSON response indicating the result of the event handling.
 	"""
 
-	return JSONResponse(await slack.process_slack_events(request))
+	raw_body: bytes = await request.body()
+
+	if not (slack.is_valid_slack_request(request, raw_body)):
+		logger.warning(f"Received a Fake Slack Event!: {body}")
+		return JSONResponse({"error": "Invalid signature"}, status_code=403)
+
+	body: dict = json.load(raw_body)
+
+	# Challenge from Bot Authentication
+	if request.headers.get("content-type") == "application/json":
+		if body.get("type") == "url_verification":
+			logger.info("SLACK EVENT: Was a challenge!")
+			return {"challenge": body.get("challenge")}
+
+	return JSONResponse(await slack.process_slack_events(body))
 
 
 @router.post("/slack/message_actions")
-async def message_actions(payload: str = Form(...)) -> JSONResponse:
+async def message_actions(request: Request, payload: str = Form(...)) -> JSONResponse:
 	"""
 	Handles slack message action.
 
@@ -70,6 +85,12 @@ async def message_actions(payload: str = Form(...)) -> JSONResponse:
 	Returns:
 		JSONResponse: A JSON response indicating the result of the action.
 	"""
+
+	raw_body: bytes = await request.body()
+
+	if not (slack.is_valid_slack_request(request, raw_body)):
+		logger.warning(f"Received a Fake Slack Message Action!")
+		return JSONResponse({"error": "Invalid signature"}, status_code=403)
 
 	response_dict, status_code = await slack.process_slack_message_actions(payload)
 	return JSONResponse(response_dict, status_code=status_code)
