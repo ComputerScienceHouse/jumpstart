@@ -1,13 +1,12 @@
-from logging import getLogger, Logger
-
 import json
-import httpx
+from logging import Logger, getLogger
 
-from fastapi import APIRouter, Request, Form
+import httpx
+from fastapi import APIRouter, Form, Request
 from fastapi.responses import JSONResponse
 
-from core import slack, wikithoughts, cshcalendar
 from config import WATCHED_CHANNELS
+from core import cshcalendar, slack, wikithoughts
 
 logger: Logger = getLogger(__name__)
 router: APIRouter = APIRouter()
@@ -28,10 +27,14 @@ async def get_calendar() -> JSONResponse:
 	events: list[dict[str, str]] = []
 
 	try:
-		get_future_events_ical: list[
-			cshcalendar.CalendarInfo
-		] = await cshcalendar.get_future_events()
-		events = cshcalendar.format_events(get_future_events_ical)
+		get_future_events_ical: (
+			list[cshcalendar.CalendarInfo] | None
+		) = await cshcalendar.get_future_events()
+
+		if get_future_events_ical is None:
+			raise Exception("Gathering future events resulted in None")
+
+		events.extend(cshcalendar.format_events(get_future_events_ical))
 	except Exception as e:
 		logger.error(f"Error fetching calendar events: {e}")
 		return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
@@ -118,13 +121,15 @@ async def message_actions(payload: str = Form(...)) -> JSONResponse:
 		if form_json.get("type") != "block_actions":
 			return JSONResponse({}, status_code=200)
 
+		message: str = DENY_MESSAGE
+
 		if slack.convert_user_response_to_bool(form_json):
 			logger.info(
 				"User approved the announcement, Adding it to the announcement list!"
 			)
 
-			message_object: dict[str, dict] = json.loads(
-				form_json.get("actions", [{}])[0].get("value", '{text:""}')
+			message_object: str | None = json.loads(
+				form_json.get("actions", [{}])[0].get("value", {})
 			).get("text", None)
 
 			user_id = form_json.get("user", {}).get("id")
@@ -133,20 +138,14 @@ async def message_actions(payload: str = Form(...)) -> JSONResponse:
 			username = username[:40]
 
 			slack.add_announcement(message_object, username)
+			message: str = ACCEPT_MESSAGE
 
-			if response_url:
-				async with httpx.AsyncClient() as client:
-					await client.post(
-						response_url,
-						json={"text": ACCEPT_MESSAGE, "replace_original": True},
-					)
-		else:
-			if response_url:
-				async with httpx.AsyncClient() as client:
-					await client.post(
-						response_url,
-						json={"text": DENY_MESSAGE, "replace_original": True},
-					)
+		if response_url:
+			async with httpx.AsyncClient() as client:
+				await client.post(
+					response_url,
+					json={"text": message, "replace_original": True},
+				)
 
 	except Exception as e:
 		logger.error(f"Error in message_actions: {e}")
