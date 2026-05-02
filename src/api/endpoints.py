@@ -56,7 +56,7 @@ async def slack_events(request: Request) -> JSONResponse:
 		JSONResponse: A JSON response indicating the result of the event handling.
 	"""
 
-	return JSONResponse(slack.process_slack_events(request))
+	return JSONResponse(await slack.process_slack_events(request))
 
 
 @router.post("/slack/message_actions")
@@ -71,7 +71,7 @@ async def message_actions(payload: str = Form(...)) -> JSONResponse:
 		JSONResponse: A JSON response indicating the result of the action.
 	"""
 
-	response_dict, status_code = slack.process_slack_message_actions(payload)
+	response_dict, status_code = await slack.process_slack_message_actions(payload)
 	return JSONResponse(response_dict, status_code=status_code)
 
 
