@@ -60,16 +60,16 @@ async def slack_events(request: Request) -> JSONResponse:
 	raw_body: bytes = await request.body()
 
 	if not (slack.is_valid_slack_request(request, raw_body)):
-		logger.warning(f"Received a Fake Slack Event!: {body}")
+		logger.warning(f"Received a Fake Slack Event!: {raw_body}")
 		return JSONResponse({"error": "Invalid signature"}, status_code=403)
 
-	body: dict = json.load(raw_body)
+	body: dict = json.loads(raw_body)
 
 	# Challenge from Bot Authentication
 	if request.headers.get("content-type") == "application/json":
 		if body.get("type") == "url_verification":
 			logger.info("SLACK EVENT: Was a challenge!")
-			return {"challenge": body.get("challenge")}
+			return JSONResponse({"challenge": body.get("challenge")})
 
 	return JSONResponse(await slack.process_slack_events(body))
 
@@ -89,7 +89,7 @@ async def message_actions(request: Request, payload: str = Form(...)) -> JSONRes
 	raw_body: bytes = await request.body()
 
 	if not (slack.is_valid_slack_request(request, raw_body)):
-		logger.warning(f"Received a Fake Slack Message Action!")
+		logger.warning(f"Received a Fake Slack Message Action! {raw_body}")
 		return JSONResponse({"error": "Invalid signature"}, status_code=403)
 
 	response_dict, status_code = await slack.process_slack_message_actions(payload)
