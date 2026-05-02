@@ -198,7 +198,7 @@ async def process_slack_events(request: Request) -> dict[str, str]:
 		body: dict = await request.json()
 		logger.info(f"Received Slack event: {body}")
 
-		event_amounts: int = get_event_retry_amount(body.get("event_id"), None)
+		event_amounts: int = get_event_retry_amount(body.get("event_id", None))
 		if event_amounts > 0:
 			logger.info(
 				f"SLACK EVENT: Retried event for {body.get('event_id', None)} {event_amounts} time(s)!"
@@ -246,7 +246,7 @@ async def process_slack_message_actions(payload: str):
 		form_json: dict = json.loads(payload)
 		response_url = form_json.get("response_url")
 
-		event_amounts: int = get_event_retry_amount(form_json.get("event_id"), None)
+		event_amounts: int = get_event_retry_amount(form_json.get("event_id", None))
 		if event_amounts > 0:
 			logger.info(
 				f"SLACK MESSAGE ACTION: Retried event for {form_json.get('event_id', None)} {event_amounts} time(s)!"
