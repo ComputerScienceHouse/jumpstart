@@ -22,6 +22,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 from fastapi import Request
 
+import asyncio
 import httpx
 
 logger: Logger = getLogger(__name__)
@@ -76,11 +77,12 @@ async def reset_event_from_cache(event_id: str) -> None:
 	"""
 	global event_id_cache
 
+	await asyncio.sleep(EVENT_CACHE_DEBOUNCE)
 	event_id_cache[event_id] = None
 	return
 
 
-async def get_event_retry_amount(event_id: str) -> int:
+def get_event_retry_amount(event_id: str) -> int:
 	"""
 	Returns the amount of times a event has been retried
 
