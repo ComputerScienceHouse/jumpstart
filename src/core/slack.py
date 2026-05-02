@@ -208,16 +208,11 @@ async def process_slack_events(request: Request) -> dict[str, str]:
 			)
 			return ({"status": "success"}, 200)
 
-
 		# Challenge from Bot Authentication
 		if request.headers.get("content-type") == "application/json":
 			if body.get("type") == "url_verification":
 				logger.info("SLACK EVENT: Was a challenge!")
 				return {"challenge": body.get("challenge")}
-
-		if not body:
-			logger.debug("SLACK EVENT: Was a challenge, with no body")
-			return {"challenge": body.get("challenge")}
 
 		event: dict = body.get("event", {})
 
@@ -272,7 +267,7 @@ async def process_slack_message_actions(payload: str):
 			user_id = form_json.get("user", {}).get("id")
 
 			username: str = await get_username(user_id)
-			username = username[:40]
+			username = username[:40] # Only get the first 40 characters so it fits on a single line
 
 			add_announcement(message_object, username)
 
