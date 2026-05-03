@@ -48,12 +48,13 @@ function setWeatherTheme(newTheme) {
     newWidget.id = "weather-image";
     newWidget.href = "https://forecast7.com/en/43d16n77d61/rochester/?unit=us";
 
-    newWidget.setAttribute("data-label_1", "ROCHESTER");
-    newWidget.setAttribute("data-label_2", "WEATHER");
-    newWidget.setAttribute("data-font", "Fira Sans");
-    newWidget.setAttribute("data-icons", "Climacons Animated");
-    newWidget.setAttribute("data-days", "100");
-    newWidget.setAttribute("data-theme", newTheme);
+    newWidget.dataset.label_1 = "ROCHESTER";
+    
+    newWidget.dataset.label_2 = "WEATHER";
+    newWidget.dataset.font = "Fira Sans";
+    newWidget.dataset.icons = "Climacons Animated";
+    newWidget.dataset.days =  "100";
+    newWidget.dataset.theme = newTheme;
 
     newWidget.textContent = "ROCHESTER WEATHER";
     oldWidget.replaceWith(newWidget);
@@ -63,10 +64,11 @@ function setNewPageTheme(newTheme) {
     if (newTheme === currentPageTheme) return;
     currentPageTheme = newTheme;
 
-    document.body.classList.forEach(cls => {
-    if (cls.startsWith('theme-')) {
-        document.body.classList.remove(cls);
-    }});
+    for (const classList of document.body.classList) {
+        if (classList.startsWith("theme-")) {
+            document.body.classList.remove(classList)
+        }
+    }
 
     document.body.classList.toggle(newTheme);
 }
@@ -96,6 +98,7 @@ async function generateCalendar(calData) {
     calendar.replaceChildren();
     calendar.appendChild(document.createElement("br"));
 
+    
     for (const event of calData) {
         const newEvent = createCalendarEvent(event.header, event.content);
         calendar.appendChild(newEvent);

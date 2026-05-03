@@ -7,6 +7,9 @@ import httpx
 import recurring_ical_events
 import arrow
 import re
+import asyncio
+
+from modules import taskmanager
 
 from config import (
 	CALENDAR_CACHE_REFRESH,
@@ -15,7 +18,6 @@ from config import (
 	CALENDAR_TIMEZONE,
 	CALENDAR_URL,
 )
-import asyncio
 
 calendar_cache: list[CalendarInfo] = []  # The current cache of the calendar
 cal_last_update: date | None = (
@@ -136,6 +138,7 @@ def time_humanizer(current_time: datetime, event_time: datetime) -> str:
 
 	return TIME_PATTERN.sub(repl, unformatted_string)
 
+
 def format_events(events: list[CalendarInfo]) -> list[dict[str, str]]:
 	"""
 	Formats a parsed list of CalendarInfos, and returns the HTML required for front end
@@ -150,7 +153,7 @@ def format_events(events: list[CalendarInfo]) -> list[dict[str, str]]:
 	current_date: date = datetime.now(ZoneInfo(CALENDAR_TIMEZONE))
 
 	if not events:
-		return {"data": [{"header": ":(", "content": "No Events on the Calendar"}]}
+		return [{"header": ":(", "content": "No Events on the Calendar"}]
 
 	formatted_list: list[dict[str, str]] = []
 
@@ -291,9 +294,11 @@ async def get_future_events() -> list[CalendarInfo]:
 
 		if cal_correct_length:
 			logger.info("Calendar cache is full length, rebuilding async!")
-			async with asyncio.TaskGroup() as taskGroup:
-				taskGroup.create_task(rebuild_calendar())
-				# Calendar is correct length, we can just run this in the background
+
+			taskmanager.create_background_task(
+				rebuild_calendar()
+			)  # Calendar is correct length, we can just run this in the background
+
 		else:
 			logger.info("Calendar cache is NOT full length, yielding rebuild!")
 			await rebuild_calendar()

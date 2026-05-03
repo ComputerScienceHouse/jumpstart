@@ -7,34 +7,81 @@ from logging import getLogger, Logger
 from slack_sdk.web.async_client import AsyncWebClient
 from slack_sdk.web.slack_response import SlackResponse
 from slack_sdk.errors import SlackApiError
+from slack_sdk.signature import SignatureVerifier
+
+from modules import taskmanager
 
 from config import (
 	SLACK_API_TOKEN,
 	SLACK_JUMPSTART_MESSAGE,
 	SLACK_DM_TEMPLATE,
 	CALENDAR_TIMEZONE,
+	WATCHED_CHANNELS,
+	SLACK_SIGNING_SECRET,
 )
+
 from datetime import datetime
 from zoneinfo import ZoneInfo
+from fastapi import Request
+
+import asyncio
+import httpx
 
 logger: Logger = getLogger(__name__)
-
-
 client: AsyncWebClient | None = None
+event_id_cache: dict[str, str] = {}
 
-try:
-	client = AsyncWebClient(token=SLACK_API_TOKEN)
-except Exception as e:
-	logger.error(f"Failed to initialize Slack client: {e}")
+EVENT_CACHE_DEBOUNCE = (
+	60  # Hold event in for one minute? I think its fine genuiflowkirkenuinelowskinly
+)
+
+ACCEPT_MESSAGE: str = "Posting right now :^)"
+DENY_MESSAGE: str = (
+	"RAHHHHHHHHHHHHHHHHHHHHHHHH HOW DARE YOU :skeleton-shield-banging-here:"
+)
 
 current_announcement: dict[str, str] = {
 	"content": "Welcome to Jumpstart!",
 	"user": "Jumpstart",
 	"timestamp": datetime.now(ZoneInfo(CALENDAR_TIMEZONE))
 	.strftime("%I:%M %p")
-	.lstrip("0")
+	.lstrip("0"),
 }
 
+
+_slack_signature_verifier: SignatureVerifier | None = (
+	SignatureVerifier(SLACK_SIGNING_SECRET) if SLACK_SIGNING_SECRET else None
+)
+
+try:
+	client = AsyncWebClient(token=SLACK_API_TOKEN)
+except Exception as e:
+	logger.error(f"Failed to initialize Slack client: {e}")
+
+
+def is_valid_slack_request(request: Request, raw_body: bytes) -> bool:
+	"""
+	Validates Slack's request signature using the signing secret.
+
+	Args:
+	    request (Request): The request to be checked
+		raw_body (bytes): The raw body
+
+	Returns
+	    bool: Whether or not it's verified
+	"""
+
+	if _slack_signature_verifier is None:
+		logger.error("Slack signing secret is not configured")
+		return False
+
+	try:
+		return _slack_signature_verifier.is_valid_request(
+			body=raw_body,
+			headers=dict(request.headers),
+		)
+	except TypeError, ValueError:
+		return False
 
 
 def clean_text(raw: str) -> str:
@@ -51,6 +98,42 @@ def clean_text(raw: str) -> str:
 	text: str = re.sub(r"<[^>]+>", "", str(raw), flags=re.IGNORECASE)
 	text = re.sub(r"&lt;.*?&gt;", "", text, flags=re.IGNORECASE)
 	return text.replace("*", "").replace("_", "").replace("`", "").strip()
+
+
+async def reset_event_from_cache(event_id: str) -> None:
+	"""
+	Removes an event from the cache
+
+	Arguments:
+		event_id (str): The id of the slack event
+	"""
+	global event_id_cache
+
+	await asyncio.sleep(EVENT_CACHE_DEBOUNCE)
+	event_id_cache[event_id] = None
+	return
+
+
+def get_event_retry_amount(event_id: str) -> int:
+	"""
+	Returns the amount of times a event has been retried
+
+	Arguments:
+		event_id (str): The id of the slack event
+
+	Returns:
+		int: The amount of times the event has been retried
+	"""
+
+	global event_id_cache
+
+	if event_id in event_id_cache:
+		event_id_cache[event_id] += 1
+		return event_id_cache[event_id]
+
+	event_id_cache[event_id] = 0
+	taskmanager.create_background_task(reset_event_from_cache(event_id))
+	return event_id_cache[event_id]
 
 
 async def gather_emojis() -> dict:
@@ -133,6 +216,107 @@ async def request_upload_via_dm(user_id: str, announcement_text: str) -> None:
 		logger.error(f"Full Slack Error: {e.response}")
 	except Exception as e:
 		logger.error(f"Error messaging user {user_id}: {e}")
+
+
+async def process_slack_events(body: dict) -> dict[str, str]:
+	"""
+	Processes a slack event, logging and returning the result from the event
+
+	Arguments:
+		request (Request): The slack event to be processed
+
+	Returns:
+		dict[str, str]: The dictionary to be responded to.
+	"""
+
+	try:
+		logger.info(f"Received Slack event: {body}")
+
+		event_amounts: int = get_event_retry_amount(body.get("event_id", None))
+		if event_amounts > 0:
+			logger.info(
+				f"SLACK EVENT: Retried event for {body.get('event_id', None)} {event_amounts} time(s)!"
+			)
+			return ({"status": "success"}, 200)
+
+		event: dict = body.get("event", {})
+
+		if event.get("subtype", None) is not None:
+			logger.info("SLACK EVENT: Had a subtype, ignoring it")
+			return {"status": "ignored"}
+
+		if event.get("channel", None) not in WATCHED_CHANNELS:
+			logger.info(
+				"SLACK EVENT: Message was not in a Watched Channel, ignoring it"
+			)
+			return {"status": "ignored"}
+
+		logger.info("SLACK EVENT: Requesting upload via dm!")
+		cleaned_text: str = clean_text(event.get("text", ""))
+
+		taskmanager.create_background_task(
+			request_upload_via_dm(event.get("user", ""), cleaned_text)
+		)
+	except Exception as e:
+		logger.error(f"Error handling Slack event: {e}")
+		return {"status": "error", "message": str(e)}
+
+	return {"status": "success"}
+
+
+async def process_slack_message_actions(payload: str):
+
+	try:
+		form_json: dict = json.loads(payload)
+		response_url = form_json.get("response_url")
+
+		event_amounts: int = get_event_retry_amount(form_json.get("trigger_id", None))
+		if event_amounts > 0:
+			logger.info(
+				f"SLACK MESSAGE ACTION: Retried event for {form_json.get('trigger_id', None)} {event_amounts} time(s)!"
+			)
+			return {"status": "ignored"}
+
+		if form_json.get("type") != "block_actions":
+			return ({}, 200)
+
+		if convert_user_response_to_bool(form_json):
+			logger.info(
+				"User approved the announcement, Adding it to the announcement list!"
+			)
+
+			message_object: dict[str, dict] = json.loads(
+				form_json.get("actions", [{}])[0].get("value", '{text:""}')
+			).get("text", None)
+
+			user_id = form_json.get("user", {}).get("id")
+
+			username: str = await get_username(user_id)
+			username = username[
+				:40
+			]  # Only get the first 40 characters so it fits on a single line
+
+			add_announcement(message_object, username)
+
+			if response_url:
+				async with httpx.AsyncClient() as client:
+					await client.post(
+						response_url,
+						json={"text": ACCEPT_MESSAGE, "replace_original": True},
+					)
+		else:
+			if response_url:
+				async with httpx.AsyncClient() as client:
+					await client.post(
+						response_url,
+						json={"text": DENY_MESSAGE, "replace_original": True},
+					)
+
+	except Exception as e:
+		logger.error(f"Error in message_actions: {e}")
+		return ({"status": "error", "message": str(e)}, 500)
+
+	return ({"status": "success"}, 200)
 
 
 def convert_user_response_to_bool(message_data: dict) -> bool:
