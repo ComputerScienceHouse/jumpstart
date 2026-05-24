@@ -49,7 +49,7 @@ Jumpstart also has support for Docker Compose, a extended version of docker that
 ## Local Development
 
 ### NOTE: MAKE SURE TO USE `uv add` IN THIS PROJECT TO KEEP `pyproject.toml` and `uv.lock` UPDATED!
-### UV Setup
+## UV Setup
 
 Install UV on your system if not already on it. If you already have it installed, you can skip down to the Project Setup page
 
@@ -65,7 +65,7 @@ __Windows (Powershell)__
     powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
-### UV Commands Useful For this Project
+## UV Commands Useful For this Project
 
 __uv sync__: UV sync serves to replace pip install -r requirements.txt. This command syncs your virtual environment to match the `pyproject.toml` file. By default, it will only copy the default dependencies for the project (found in dependencies)
 
@@ -79,7 +79,7 @@ __uv add $PACKAGE__: UV serves to replace pip install $PACKAGE. It installs the 
 
 __uv add --group $GROUP $PACKAGE__: Same as UV add, but adds the package to the group instead of the default project dependencies. 
 
-### UV Groups Used in this Project
+## UV Groups Used in this Project
 __dev__: Dependencys needed for testing locally
 
 __docs__: Dependencys used for creating the statically generated website on /docs

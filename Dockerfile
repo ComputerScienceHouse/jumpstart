@@ -31,4 +31,4 @@ RUN addgroup -g 2000 jumpgroup && \
 
 USER jumpstart
 
-CMD ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--log-config", "/jumpstart/logging_config.yaml", "--proxy-headers", "--forwarded-allow-ips", "*"]
+CMD ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--log-config", "/app/logging_config.yaml", "--proxy-headers", "--forwarded-allow-ips", "*"]
