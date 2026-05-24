@@ -32,7 +32,7 @@ jobs:
         run: |
           uv run pytest -v
 
-      - uses: SonarSource/sonarqube-scan-action@v6git
+      - uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
