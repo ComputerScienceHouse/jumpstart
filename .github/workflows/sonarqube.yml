@@ -26,14 +26,13 @@ jobs:
       - name: Install dependencies
         run: |
           pip install uv
-          uv pip install -r src/requirements.txt --system
-          uv pip install -r tests/requirements.txt --system
+          uv sync --group test --frozen
 
       - name: Run tests with coverage
         run: |
-          pytest -v
+          uv run pytest -v
 
-      - uses: SonarSource/sonarqube-scan-action@v6
+      - uses: SonarSource/sonarqube-scan-action@v6git
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
