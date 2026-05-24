@@ -43,7 +43,7 @@ Jumpstart also has support for Docker Compose, a extended version of docker that
 
 (This is a really cool thing! If you use docker often, check it out!)
 ```
-    docker compose up
+    docker compose up --build
 ```
 
 ## Local Development
@@ -69,7 +69,7 @@ __Windows (Powershell)__
 
 __uv sync__: UV sync serves to replace pip install -r requirements.txt. This command syncs your virtual environment to match the `pyproject.toml` file. By default, it will only copy the default dependencies for the project (found in dependencies)
 
-__uv sync --group $GROUP__: UV sync with the added group flag will ALSO install all dependencies found in that group ALONG with the default dependencies. 
+__uv sync --group $GROUP__: UV sync with the added group flag will ALSO install all dependencies found in that group ALONG with the default dependencies.
 
 __uv sync --frozen__: When reading the UV Sync, it reads ONLY the `uv.lock` file, and does not attempt to make any modifications, and failing instead. This is incredibly useful for reproducibility, which is why its used in the docker file.
 
@@ -77,7 +77,7 @@ __uv sync --all-groups__: UV sync, along with installing dependencies of every g
 
 __uv add $PACKAGE__: UV serves to replace pip install $PACKAGE. It installs the most recent version of the inserted package, and adds it to the projects default dependencies
 
-__uv add --group $GROUP $PACKAGE__: Same as UV add, but adds the package to the group instead of the default project dependencies. 
+__uv add --group $GROUP $PACKAGE__: Same as UV add, but adds the package to the group instead of the default project dependencies.
 
 ## UV Groups Used in this Project
 __dev__: Dependencys needed for testing locally
@@ -87,7 +87,7 @@ __docs__: Dependencys used for creating the statically generated website on /doc
 __tests__: Dependencys used for running the unit tests.
 
 ## Project Setup
-1. Run: `uv venv .venv` --python 3.14
+1. Run: `uv venv .venv --python 3.14`
 2. Activate the virtual environment
     * Bash: `source .venv/bin/activate`
     * Fish: `source .venv/bin/activate.fish`
