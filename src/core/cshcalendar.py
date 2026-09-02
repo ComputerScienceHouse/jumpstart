@@ -2,6 +2,8 @@ from logging import getLogger, Logger
 from datetime import datetime, date, timedelta, time
 from zoneinfo import ZoneInfo
 
+from core import announcement_queue
+
 from icalendar.cal import Event, Calendar
 import httpx
 import recurring_ical_events
@@ -188,7 +190,7 @@ async def rebuild_calendar() -> None:
 	try:
 		cal_constructed_event.clear()
 		found_events: set[CalendarInfo] = set()
-		response: httpx.Response = await cshcal_client.get(CALENDAR_URL, timeout=10)
+		response: httpx.Response = await cshcal_client.get(CALENDAR_URL, timeout=20)
 		response.raise_for_status()
 
 		cal: Calendar = Calendar.from_ical(response.content)
@@ -215,10 +217,11 @@ async def rebuild_calendar() -> None:
 				event.get("LOCATION"),
 			)
 
+			await announcement_queue.check_for_announcement(event, dt)
 			found_events.add(new_event)
 
-		cal = None
-		fetched_daily_events = None
+		del cal
+		del fetched_daily_events
 	except Exception as e:
 		logger.warning("Failed to rebuild calendar cache! Error:")
 		logger.warning(e)

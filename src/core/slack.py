@@ -12,6 +12,7 @@ from slack_sdk.signature import SignatureVerifier
 from modules import taskmanager
 
 from config import (
+	SLACK_ANNOUNCEMENT_CHANNEL,
 	SLACK_API_TOKEN,
 	SLACK_JUMPSTART_MESSAGE,
 	SLACK_DM_TEMPLATE,
@@ -317,6 +318,21 @@ async def process_slack_message_actions(payload: str):
 		return ({"status": "error", "message": str(e)}, 500)
 
 	return ({"status": "success"}, 200)
+
+
+async def send_announcement_message(msg_text: str) -> None:
+	"""
+	Sends a message to the given announcements channel
+
+	Args:
+		msg_text (str): The text for the message
+
+	"""
+	if not client:
+		logger.warning("Client has not been initalized")
+		return
+
+	await client.chat_postMessage(channel=SLACK_ANNOUNCEMENT_CHANNEL, text=msg_text)
 
 
 def convert_user_response_to_bool(message_data: dict) -> bool:

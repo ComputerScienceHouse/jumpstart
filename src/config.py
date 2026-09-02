@@ -2,13 +2,14 @@ import os
 import json
 import logging
 from dotenv import load_dotenv
+from typing import Any
 
 load_dotenv()
 
 logger: logging.Logger = logging.getLogger(__name__)
 
 
-def _get_env_variable(name: str, default: str | None = None) -> str | None:
+def _get_env_variable(name: str, default: str | None = None) -> str | Any:
 	"""
 	Retrieves an environment variable, with an optional default value.
 
@@ -21,7 +22,7 @@ def _get_env_variable(name: str, default: str | None = None) -> str | None:
 	"""
 
 	try:
-		value: str = os.getenv(name, default)
+		value: str | None = os.getenv(name, default)
 
 		if value in (None, ""):
 			logger.warning(
@@ -37,16 +38,22 @@ def _get_env_variable(name: str, default: str | None = None) -> str | None:
 
 BASE_DIR: str = os.path.dirname(os.path.abspath(__file__))
 
-SLACK_API_TOKEN: str | None = _get_env_variable("SLACK_API_TOKEN", None)
+SLACK_ANNOUNCEMENT_CHANNEL: str = _get_env_variable("SLACK_ANNOUNCEMENT_CHANNEL", "")
+SLACK_ACTIVE_GROUP_ID: str = _get_env_variable("SLACK_ACTIVE_GROUP_ID", "")
+SLACK_MEETINGS_GROUP_ID: str = _get_env_variable("SLACK_MEETINGS_GROUP_ID", "")
+SLACK_FROSH_GROUP_ID: str = _get_env_variable("SLACK_FROSH_GROUP_ID", "")
+SLACK_TEST_GROUP_ID: str = _get_env_variable("SLACK_TEST_GROUP_ID", "")
+
+SLACK_API_TOKEN: str = _get_env_variable("SLACK_API_TOKEN", "")
 SLACK_JUMPSTART_MESSAGE: str = "Would you like to post this message to Jumpstart?"
 SLACK_SIGNING_SECRET: str = _get_env_variable("SLACK_SIGNING_SECRET", None)
 
 WATCHED_CHANNELS: tuple[str] = tuple(
-	_get_env_variable("WATCHED_CHANNELS", "").split(",")
+	_get_env_variable("WATCHED_CHANNELS", "0,1,2").split(",")
 )
 SLACK_DM_TEMPLATE: dict | None = None
 
-CALENDAR_URL: str | None = _get_env_variable("CALENDAR_URL", None)
+CALENDAR_URL: str = _get_env_variable("CALENDAR_URL", "")
 CALENDAR_OUTLOOK_DAYS: int = int(_get_env_variable("CALENDAR_OUTLOOK_DAYS", "7"))
 CALENDAR_EVENT_MAXIMUM: int = int(_get_env_variable("CALENDAR_EVENT_MAXIMUM", "10"))
 CALENDAR_TIMEZONE: str = _get_env_variable("CALENDAR_TIMEZONE", "America/New_York")

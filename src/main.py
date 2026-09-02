@@ -20,6 +20,7 @@ from config import BASE_DIR
 
 from api import endpoints
 from core import wikithoughts, cshcalendar
+from modules import taskmanager
 
 logger: Logger = getLogger(__name__)
 
@@ -27,7 +28,7 @@ logger: Logger = getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 	logger.info("Starting up the Jumpstart application!")
-	asyncio.create_task(cshcalendar.rebuild_calendar())
+	taskmanager.create_background_task(cshcalendar.rebuild_calendar())
 	await wikithoughts.auth_bot()
 
 	yield
