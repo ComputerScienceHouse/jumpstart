@@ -38,6 +38,9 @@ def _get_env_variable(name: str, default: str | None = None) -> str | Any:
 
 BASE_DIR: str = os.path.dirname(os.path.abspath(__file__))
 
+SLACK_ALLOW_ANNOUNCEMENTS: bool = (
+	_get_env_variable("SLACK_ALLOW_ANNOUNCEMENTS", "false") == "true"
+)
 SLACK_ANNOUNCEMENT_CHANNEL: str = _get_env_variable("SLACK_ANNOUNCEMENT_CHANNEL", "")
 SLACK_ACTIVE_GROUP_ID: str = _get_env_variable("SLACK_ACTIVE_GROUP_ID", "")
 SLACK_MEETINGS_GROUP_ID: str = _get_env_variable("SLACK_MEETINGS_GROUP_ID", "")

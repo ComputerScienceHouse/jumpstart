@@ -36,6 +36,7 @@ cal_constructed_event.clear()
 
 logger: Logger = getLogger(__name__)
 logger.info("Starting up the calendar service!")
+
 cshcal_client = httpx.AsyncClient()
 
 # Conversion from seconds
@@ -60,6 +61,8 @@ HUMANIZER_CHECKS: dict[int, str] = {
 
 BORDER_STRING: str = '<hr class="calendar-border">'
 TIME_PATTERN = re.compile(r"%([^%]+)%")
+
+calendar_rebuild_lock: asyncio.Lock = asyncio.Lock()
 
 
 # Automatically format all info into the class
@@ -186,52 +189,55 @@ async def rebuild_calendar() -> None:
 
 	global calendar_cache, cal_last_update, cal_constructed_event
 
-	current_time: datetime = datetime.now(ZoneInfo(CALENDAR_TIMEZONE))
-	try:
-		cal_constructed_event.clear()
-		found_events: set[CalendarInfo] = set()
-		response: httpx.Response = await cshcal_client.get(CALENDAR_URL, timeout=20)
-		response.raise_for_status()
+	async with calendar_rebuild_lock:
+		current_time: datetime = datetime.now(ZoneInfo(CALENDAR_TIMEZONE))
+		try:
+			cal_constructed_event.clear()
+			found_events: set[CalendarInfo] = set()
+			response: httpx.Response = await cshcal_client.get(CALENDAR_URL, timeout=20)
+			response.raise_for_status()
 
-		cal: Calendar = Calendar.from_ical(response.content)
+			cal: Calendar = Calendar.from_ical(response.content)
 
-		fetched_daily_events: list[Event] = recurring_ical_events.of(cal).between(
-			current_time, current_time + timedelta(days=CALENDAR_OUTLOOK_DAYS)
-		)
-
-		for event in fetched_daily_events:
-			dt = event.get("DTSTART").dt
-
-			if isinstance(dt, date) and not isinstance(dt, datetime):
-				dt = datetime.combine(dt, time.min, tzinfo=ZoneInfo(CALENDAR_TIMEZONE))
-
-			elif dt.tzinfo is None:
-				dt = dt.replace(tzinfo=ZoneInfo(CALENDAR_TIMEZONE))
-
-			else:
-				dt = dt.astimezone(ZoneInfo(CALENDAR_TIMEZONE))
-
-			new_event: CalendarInfo = CalendarInfo(
-				event.get("SUMMARY"),
-				dt,
-				event.get("LOCATION"),
+			fetched_daily_events: list[Event] = recurring_ical_events.of(cal).between(
+				current_time, current_time + timedelta(days=CALENDAR_OUTLOOK_DAYS)
 			)
 
-			announcement_queue.check_for_announcement(event, dt)
-			found_events.add(new_event)
+			announcement_queue.clear_running_workers()
 
-		del cal
-		del fetched_daily_events
-	except Exception as e:
-		logger.warning("Failed to rebuild calendar cache! Error:")
-		logger.warning(e)
-		cal_constructed_event.set()
+			for event in fetched_daily_events:
+				dt = event.get("DTSTART").dt
 
-	cal_last_update = current_time
-	calendar_cache = sorted(found_events, key=lambda x: x.date)[
-		:CALENDAR_EVENT_MAXIMUM
-	]  # Only cache the first elements of this list
-	cal_constructed_event.set()
+				if isinstance(dt, date) and not isinstance(dt, datetime):
+					dt = datetime.combine(
+						dt, time.min, tzinfo=ZoneInfo(CALENDAR_TIMEZONE)
+					)
+
+				elif dt.tzinfo is None:
+					dt = dt.replace(tzinfo=ZoneInfo(CALENDAR_TIMEZONE))
+
+				else:
+					dt = dt.astimezone(ZoneInfo(CALENDAR_TIMEZONE))
+
+				new_event: CalendarInfo = CalendarInfo(
+					event.get("SUMMARY"),
+					dt,
+					event.get("LOCATION"),
+				)
+
+				announcement_queue.check_for_announcement(event, dt)
+				found_events.add(new_event)
+
+			cal_last_update = current_time
+			calendar_cache = sorted(found_events, key=lambda x: x.date)[
+				:CALENDAR_EVENT_MAXIMUM
+			]  # Only cache the first elements of this list
+		except Exception as e:
+			logger.warning("Failed to rebuild calendar cache! Error:")
+			logger.warning(e)
+			cal_constructed_event.set()
+		finally:
+			cal_constructed_event.set()
 
 
 async def get_future_events() -> list[CalendarInfo]:

@@ -6,7 +6,6 @@ V1 Authors: Beckett Jenen
 """
 
 import os
-import asyncio
 
 from logging import getLogger, Logger
 
@@ -29,6 +28,7 @@ logger: Logger = getLogger(__name__)
 async def lifespan(app: FastAPI):
 	logger.info("Starting up the Jumpstart application!")
 	taskmanager.create_background_task(cshcalendar.rebuild_calendar())
+	taskmanager.create_background_task(taskmanager.calendar_worker())
 	await wikithoughts.auth_bot()
 
 	yield

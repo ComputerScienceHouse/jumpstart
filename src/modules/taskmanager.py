@@ -1,11 +1,14 @@
 import asyncio
 
+from core import cshcalendar
 from logging import getLogger, Logger
 from collections.abc import Coroutine
 
 logger: Logger = getLogger(__name__)
 
 running_background_tasks: set[asyncio.Task] = set()
+
+TWENTY_MINUTES = 60 * 20
 
 
 def handle_task_exception(task: asyncio.Task) -> None:
@@ -41,3 +44,12 @@ def create_background_task(coroutine: Coroutine) -> asyncio.Task:
 	task.add_done_callback(running_background_tasks.discard)
 	task.add_done_callback(handle_task_exception)
 	return task
+
+
+async def calendar_worker():
+	"""
+	Loop to force rebuild the calendar every 20 minutes to check for event updates
+	"""
+	while True:
+		await asyncio.sleep(TWENTY_MINUTES)
+		await cshcalendar.rebuild_calendar()
