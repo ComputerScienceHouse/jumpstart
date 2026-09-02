@@ -217,7 +217,7 @@ async def rebuild_calendar() -> None:
 				event.get("LOCATION"),
 			)
 
-			await announcement_queue.check_for_announcement(event, dt)
+			announcement_queue.check_for_announcement(event, dt)
 			found_events.add(new_event)
 
 		del cal
