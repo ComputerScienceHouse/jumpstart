@@ -32,7 +32,6 @@ queued_announcement_id_cache: dict[str, asyncio.Task] = {}
 TEN_MINUTES = 60 * 10
 MINUTES_BEFORE_EVENT_PING = 15
 
-
 async def create_announcement_worker(
 	event_uid: str, event_recurrence_id: str, text: str, event_time: datetime
 ) -> None:
@@ -133,22 +132,8 @@ def check_for_announcement(event: dict[str, Any], time: datetime) -> None:
 	loc = event.get("LOCATION", None)
 
 	description = description.lower().strip()
-	if SLACK_NONTECHNICAL_SEMINAR_KEYWORD.lower() in description:
-		if loc:
-			queue_announcement(
-				uid,
-				rec_id,
-				f"<!subteam^{SLACK_ACTIVE_GROUP_ID}> <!subteam^{SLACK_FROSH_GROUP_ID}> The Technical Seminar {title} will be happening in the {loc} in {MINUTES_BEFORE_EVENT_PING} minutes!",
-				time,
-			)
-		else:
-			queue_announcement(
-				uid,
-				rec_id,
-				f"<!subteam^{SLACK_ACTIVE_GROUP_ID}> <!subteam^{SLACK_FROSH_GROUP_ID}> The Technical Seminar {title} will be happening in {MINUTES_BEFORE_EVENT_PING} minutes!",
-				time,
-			)
-	elif SLACK_TECHNICAL_SEMINAR_KEYWORD.lower() in description:
+
+	if SLACK_TECHNICAL_SEMINAR_KEYWORD.lower() in description:
 		if loc:
 			queue_announcement(
 				uid,
@@ -161,6 +146,21 @@ def check_for_announcement(event: dict[str, Any], time: datetime) -> None:
 				uid,
 				rec_id,
 				f"<!subteam^{SLACK_ACTIVE_GROUP_ID}> <!subteam^{SLACK_FROSH_GROUP_ID}> The Non-Technical Seminar {title} will be happening in {MINUTES_BEFORE_EVENT_PING} minutes!",
+				time,
+			)
+	elif SLACK_NONTECHNICAL_SEMINAR_KEYWORD.lower() in description:
+		if loc:
+			queue_announcement(
+				uid,
+				rec_id,
+				f"<!subteam^{SLACK_ACTIVE_GROUP_ID}> <!subteam^{SLACK_FROSH_GROUP_ID}> The Technical Seminar {title} will be happening in the {loc} in {MINUTES_BEFORE_EVENT_PING} minutes!",
+				time,
+			)
+		else:
+			queue_announcement(
+				uid,
+				rec_id,
+				f"<!subteam^{SLACK_ACTIVE_GROUP_ID}> <!subteam^{SLACK_FROSH_GROUP_ID}> The Technical Seminar {title} will be happening in {MINUTES_BEFORE_EVENT_PING} minutes!",
 				time,
 			)
 	elif SLACK_MEETINGS_KEYWORD.lower() in description:
