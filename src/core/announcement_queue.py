@@ -15,6 +15,7 @@ from config import (
 	SLACK_ACTIVE_GROUP_ID,
 	SLACK_FROSH_GROUP_ID,
 	SLACK_MEETINGS_GROUP_ID,
+	SLACK_TEST_GROUP_ID,
 	SLACK_ALLOW_ANNOUNCEMENTS,
 )
 
@@ -26,9 +27,9 @@ queued_announcement_id_cache: dict[str, asyncio.Task] = {}
 
 TEN_MINUTES = 60 * 10
 TECHNICAL_SEMINAR_KEYWORD: str = "technical"
-STANDARD_SEMINAR_KEYWORD: str = "seminar"
+STANDARD_SEMINAR_KEYWORD: str = "non-technical"
 MEETING_KEYWORD: str = "meeting"
-TEST_KEYWORD: str = "test_gick"
+TEST_KEYWORD: str = "gick"
 
 MINUTES_BEFORE_EVENT_PING = 15
 
@@ -178,18 +179,16 @@ def check_for_announcement(event: dict[str, Any], time: datetime) -> None:
 				f"<!subteam^{SLACK_MEETINGS_GROUP_ID}> The {title} directorship will be happening in {MINUTES_BEFORE_EVENT_PING} minutes!",
 				time,
 			)
-
-
-# 	elif TEST_KEYWORD.lower() in description:
-# 		if loc:
-# 			queue_announcement(
-# 				uid, rec_id, f"<!subteam^{SLACK_TEST_GROUP_ID}> testing in the {loc}!", time
-# 			)
-# 		else:
-# queue_announcement(
-# 					uid, rec_id, f"<!subteam^{SLACK_TEST_GROUP_ID}> testing!", time
-# 				)
-# 			)
+	elif TEST_KEYWORD.lower() in description:
+		if loc:
+			queue_announcement(
+				uid, rec_id, f"<!subteam^{SLACK_TEST_GROUP_ID}> gick go to the {loc}!", time
+			)
+		else:
+			queue_announcement(
+					uid, rec_id, f"<!subteam^{SLACK_TEST_GROUP_ID}> hi gick!", time
+				)
+			)
 
 # if TECHNICAL_SEMINAR_KEYWORD.lower() in description:
 # 	taskmanager.create_background_task(create_announcement_worker(
