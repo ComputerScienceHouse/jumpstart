@@ -38,7 +38,7 @@ def _get_env_variable(name: str, default: str | None = None) -> str | Any:
 
 BASE_DIR: str = os.path.dirname(os.path.abspath(__file__))
 
-SLACK_MEETINGS_KEYWORD: str = _get_env_variable("SLACK_MEETINGS_KEYWORD", "meetings")
+SLACK_MEETINGS_KEYWORD: str = _get_env_variable("SLACK_MEETINGS_KEYWORD", "meeting")
 SLACK_NONTECHNICAL_SEMINAR_KEYWORD: str = _get_env_variable("SLACK_NONTECHNICAL_SEMINAR_KEYWORD", "non-technical")
 SLACK_TECHNICAL_SEMINAR_KEYWORD: str = _get_env_variable("SLACK_TECHNICAL_SEMINAR_KEYWORD", "technical")
 
