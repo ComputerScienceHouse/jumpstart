@@ -32,6 +32,9 @@ queued_announcement_id_cache: dict[str, asyncio.Task] = {}
 TEN_MINUTES = 60 * 10
 MINUTES_BEFORE_EVENT_PING = 15
 
+logger.info(SLACK_MEETINGS_KEYWORD)
+logger.info(SLACK_TECHNICAL_SEMINAR_KEYWORD)
+
 async def create_announcement_worker(
 	event_uid: str, event_recurrence_id: str, text: str, event_time: datetime
 ) -> None:
@@ -46,6 +49,7 @@ async def create_announcement_worker(
 	"""
 	key: str = f"{event_uid}:{event_recurrence_id}"  # we should use redis instead
 
+	logger.info(key)
 	current_time: datetime = datetime.now(ZoneInfo(CALENDAR_TIMEZONE))
 	if current_time < (event_time - timedelta(minutes=MINUTES_BEFORE_EVENT_PING)):
 		wait_time = (
@@ -133,7 +137,7 @@ def check_for_announcement(event: dict[str, Any], time: datetime) -> None:
 
 	description = description.lower().strip()
 
-	if SLACK_TECHNICAL_SEMINAR_KEYWORD.lower() in description:
+	if SLACK_NONTECHNICAL_SEMINAR_KEYWORD.lower() in description:
 		if loc:
 			queue_announcement(
 				uid,
@@ -148,7 +152,7 @@ def check_for_announcement(event: dict[str, Any], time: datetime) -> None:
 				f"<!subteam^{SLACK_ACTIVE_GROUP_ID}> <!subteam^{SLACK_FROSH_GROUP_ID}> The Non-Technical Seminar {title} will be happening in {MINUTES_BEFORE_EVENT_PING} minutes!",
 				time,
 			)
-	elif SLACK_NONTECHNICAL_SEMINAR_KEYWORD.lower() in description:
+	elif SLACK_TECHNICAL_SEMINAR_KEYWORD.lower() in description:
 		if loc:
 			queue_announcement(
 				uid,
