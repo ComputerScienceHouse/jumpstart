@@ -185,8 +185,7 @@ def check_for_announcement(event: dict[str, Any], time: datetime) -> None:
 			)
 		else:
 			queue_announcement(
-					uid, rec_id, f"<!subteam^{SLACK_TEST_GROUP_ID}> hi gick!", time
-				)
+				uid, rec_id, f"<!subteam^{SLACK_TEST_GROUP_ID}> hi gick!", time
 			)
 
 # if TECHNICAL_SEMINAR_KEYWORD.lower() in description:
