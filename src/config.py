@@ -4,6 +4,7 @@ import os
 from typing import overload
 
 from dotenv import load_dotenv
+from typing import Any
 
 load_dotenv()
 
@@ -64,15 +65,31 @@ match _raw_logging_level:
 
 SLACK_API_TOKEN: str | None = _get_env_variable("SLACK_API_TOKEN", None)
 SLACK_JUMPSTART_MESSAGE: str = "Would you like to post this message to Jumpstart?"
-RAW_CHANNELS: str = _get_env_variable("WATCHED_CHANNELS", "")
-WATCHED_CHANNELS: tuple[str, ...] = tuple(RAW_CHANNELS.split(","))
+WATCHED_CHANNELS: tuple[str, ...] = tuple(
+	_get_env_variable("WATCHED_CHANNELS", "0,1,2").split(",")
+)
 
 SLACK_DM_TEMPLATE_FILEPATH: str = os.path.join(
-	BASE_DIR, "static", "slack", "dm_request_template.json"
+    BASE_DIR, "static", "slack", "dm_request_template.json"
 )
+SLACK_MEETINGS_KEYWORD: str = _get_env_variable("SLACK_MEETINGS_KEYWORD", "meeting")
+SLACK_NONTECHNICAL_SEMINAR_KEYWORD: str = _get_env_variable("SLACK_NONTECHNICAL_SEMINAR_KEYWORD", "non-technical")
+SLACK_TECHNICAL_SEMINAR_KEYWORD: str = _get_env_variable("SLACK_TECHNICAL_SEMINAR_KEYWORD", "technical")
+
+SLACK_ALLOW_ANNOUNCEMENTS: bool = (
+	_get_env_variable("SLACK_ALLOW_ANNOUNCEMENTS", "false") == "true"
+)
+SLACK_ANNOUNCEMENT_CHANNEL: str = _get_env_variable("SLACK_ANNOUNCEMENT_CHANNEL", "")
+SLACK_ACTIVE_GROUP_ID: str = _get_env_variable("SLACK_ACTIVE_GROUP_ID", "")
+SLACK_MEETINGS_GROUP_ID: str = _get_env_variable("SLACK_MEETINGS_GROUP_ID", "")
+SLACK_FROSH_GROUP_ID: str = _get_env_variable("SLACK_FROSH_GROUP_ID", "")
+SLACK_TEST_GROUP_ID: str = _get_env_variable("SLACK_TEST_GROUP_ID", "")
+
+SLACK_SIGNING_SECRET: str | None = _get_env_variable("SLACK_SIGNING_SECRET", None)
+
 SLACK_DM_TEMPLATE: list | None = None
 
-CALENDAR_URL: str | None = _get_env_variable("CALENDAR_URL", None)
+CALENDAR_URL: str = _get_env_variable("CALENDAR_URL", "")
 CALENDAR_OUTLOOK_DAYS: int = int(_get_env_variable("CALENDAR_OUTLOOK_DAYS", "7"))
 CALENDAR_EVENT_MAXIMUM: int = int(_get_env_variable("CALENDAR_EVENT_MAXIMUM", "10"))
 CALENDAR_TIMEZONE: str = _get_env_variable("CALENDAR_TIMEZONE", "America/New_York")

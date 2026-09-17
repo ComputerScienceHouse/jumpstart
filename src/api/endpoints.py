@@ -5,14 +5,15 @@ import httpx
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import JSONResponse
 
-from config import WATCHED_CHANNELS
+from config import WATCHED_CHANNELS, LOGGING_LEVEL
 from core import cshcalendar, slack, wikithoughts
 
-logger: Logger = getLogger(__name__)
-router: APIRouter = APIRouter()
+import urllib
 
-ACCEPT_MESSAGE: str = "Posting right now :^)"
-DENY_MESSAGE: str = "Okay :( maybe next time"
+logger: Logger = getLogger(__name__)
+logger.setLevel(LOGGING_LEVEL)
+
+router: APIRouter = APIRouter()
 
 
 @router.get("/calendar")
@@ -66,44 +67,25 @@ async def slack_events(request: Request) -> JSONResponse:
 		JSONResponse: A JSON response indicating the result of the event handling.
 	"""
 
-	try:
-		logger.debug(f"Received Slack event: {await request.body()}")
+	raw_body: bytes = await request.body()
 
-		body: dict = await request.json()
+	if not (slack.is_valid_slack_request(request, raw_body)):
+		logger.warning(f"Received a Fake Slack Event!: {raw_body}")
+		return JSONResponse({"error": "Invalid signature"}, status_code=403)
 
-		if request.headers.get("content-type") == "application/json":
-			if body.get("type") == "url_verification":
-				logger.info("SLACK EVENT: Was a challenge!")
-				return JSONResponse({"challenge": body.get("challenge")})
+	body: dict = json.loads(raw_body)
 
-		if not body:
-			logger.debug("SLACK EVENT: Was a challenge, with no body")
+	# Challenge from Bot Authentication
+	if request.headers.get("content-type") == "application/json":
+		if body.get("type") == "url_verification":
+			logger.info("SLACK EVENT: Was a challenge!")
 			return JSONResponse({"challenge": body.get("challenge")})
 
-		event: dict = body.get("event", {})
-		cleaned_text: str = slack.clean_text(event.get("text", ""))
-
-		if event.get("subtype", None) is not None:
-			logger.info("SLACK EVENT: Had no subtype, ignoring it")
-			return JSONResponse({"status": "ignored"})
-
-		if event.get("channel", None) not in WATCHED_CHANNELS:
-			logger.info(
-				"SLACK EVENT: Message was not in a Watched Channel, ignoring it"
-			)
-			return JSONResponse({"status": "ignored"})
-
-		logger.info("SLACK EVENT: Requesting upload via dm!")
-		await slack.request_upload_via_dm(event.get("user", ""), cleaned_text)
-	except Exception as e:
-		logger.error(f"Error handling Slack event: {e}")
-		return JSONResponse({"status": "error", "message": str(e)})
-
-	return JSONResponse({"status": "success"})
+	return JSONResponse(await slack.process_slack_events(body))
 
 
 @router.post("/slack/message_actions")
-async def message_actions(payload: str = Form(...)) -> JSONResponse:
+async def message_actions(request: Request) -> JSONResponse:
 	"""
 	Handles slack message action.
 
@@ -114,44 +96,20 @@ async def message_actions(payload: str = Form(...)) -> JSONResponse:
 		JSONResponse: A JSON response indicating the result of the action.
 	"""
 
-	try:
-		form_json: dict = json.loads(payload)
-		response_url = form_json.get("response_url")
+	raw_body: bytes = await request.body()
 
-		if form_json.get("type") != "block_actions":
-			return JSONResponse({}, status_code=200)
+	if not (slack.is_valid_slack_request(request, raw_body)):
+		logger.warning(f"Received a Fake Slack Message Action! {raw_body}")
+		return JSONResponse({"error": "Invalid signature"}, status_code=403)
 
-		message: str = DENY_MESSAGE
+	form_data = urllib.parse.parse_qs(raw_body.decode("utf-8"))
+	payload = form_data.get("payload", [None])[0]
 
-		if slack.convert_user_response_to_bool(form_json):
-			logger.info(
-				"User approved the announcement, Adding it to the announcement list!"
-			)
+	if payload is None:
+		return JSONResponse({"error": "Missing payload"}, status_code=400)
 
-			message_object: str | None = json.loads(
-				form_json.get("actions", [{}])[0].get("value", {})
-			).get("text", None)
-
-			user_id = form_json.get("user", {}).get("id")
-
-			username: str = await slack.get_username(user_id=user_id)
-			username = username[:40]
-
-			slack.add_announcement(message_object, username)
-			message: str = ACCEPT_MESSAGE
-
-		if response_url:
-			async with httpx.AsyncClient() as client:
-				await client.post(
-					response_url,
-					json={"text": message, "replace_original": True},
-				)
-
-	except Exception as e:
-		logger.error(f"Error in message_actions: {e}")
-		return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
-
-	return JSONResponse({"status": "success"}, status_code=200)
+	response_dict, status_code = await slack.process_slack_message_actions(payload)
+	return JSONResponse(response_dict, status_code=status_code)
 
 
 @router.get("/wikithought")

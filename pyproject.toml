@@ -1,0 +1,42 @@
+[project]
+name = "jumpstart"
+version = "0.1.0"
+description = "A graphical interface that displays information in the elevator lobby of Computer Science House."
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "aiohttp==3.13.3",
+    "arrow==1.4.0",
+    "dotenv==0.9.9",
+    "fastapi==0.135.1",
+    "google-api-python-client==2.191.0",
+    "httpx==0.28.1",
+    "icalendar==7.0.3",
+    "jinja2==3.1.6",
+    "logging==0.4.9.6",
+    "python-multipart==0.0.22",
+    "pyyaml==6.0.3",
+    "recurring-ical-events==3.8.1",
+    "requests==2.32.5",
+    "slack-sdk==3.40.1",
+    "uvicorn==0.41.0",
+]
+
+[dependency-groups]
+dev = [
+    "pre-commit==4.5.1",
+    "pytest==9.0.2",
+    "ruff==0.15.6",
+]
+docs = [
+    "mkdocs-git-revision-date-localized-plugin==1.5.1",
+    "mkdocs-minify-plugin==0.8.0",
+    "mkdocstrings==1.0.3",
+    "mkdocstrings-python==2.0.3",
+    "pymdown-extensions==10.21.2",
+    "zensical==0.0.24",
+]
+tests = [
+    "coverage==7.13.4",
+    "pytest==9.0.2",
+]

@@ -18,6 +18,7 @@ from fastapi.templating import Jinja2Templates
 from api import endpoints
 from config import BASE_DIR, LOGGING_LEVEL
 from core import cshcalendar, wikithoughts
+from modules import taskmanager
 
 logger: Logger = getLogger(__name__)
 logger.setLevel(LOGGING_LEVEL)
@@ -26,8 +27,8 @@ logger.setLevel(LOGGING_LEVEL)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 	logger.info("Starting up the Jumpstart application!")
-	async with asyncio.TaskGroup() as tg:
-		tg.create_task(cshcalendar.rebuild_calendar())
+	taskmanager.create_background_task(cshcalendar.rebuild_calendar())
+	taskmanager.create_background_task(taskmanager.calendar_worker())
 	await wikithoughts.auth_bot()
 
 	yield
