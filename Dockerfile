@@ -5,10 +5,12 @@ ENV UV_NO_CACHE=1
 WORKDIR /app
 
 COPY pyproject.toml uv.lock ./
-RUN uv sync --group docs --frozen
+RUN uv sync --frozen
 
 FROM base AS docbuilder
 ENV UV_NO_CACHE=1
+
+RUN uv sync --group docs --frozen
 
 WORKDIR /appdocs
 
@@ -20,8 +22,8 @@ WORKDIR /app
 
 RUN uv run zensical build --config-file /appdocs/mkdocs.yml
 
-FROM ghcr.io/astral-sh/uv:python3.14-alpine
-ENV UV_NO_CACHE=1
+FROM python:3.14-alpine
+ENV PATH="/app/.venv/bin:$PATH"
 
 COPY --from=base /app/.venv /app/.venv
 COPY src /app
@@ -34,4 +36,4 @@ RUN addgroup -g 2000 jumpgroup && \
 
 USER jumpstart
 
-CMD ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--log-config", "/app/logging_config.yaml", "--proxy-headers", "--forwarded-allow-ips", "*"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--log-config", "/app/logging_config.yaml", "--proxy-headers", "--forwarded-allow-ips", "*"]
