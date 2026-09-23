@@ -10,8 +10,6 @@ from icalendar.cal import Event, Calendar
 import httpx
 import recurring_ical_events
 import arrow
-import re
-import asyncio
 
 from modules import taskmanager
 
@@ -94,6 +92,7 @@ class CalendarInfo:
 def ceil_division(num: int, den: int) -> int:
 	"""
 	Returns a ceiling division of the two numbers
+
 	Args:
 		num (int): the numerator
 		den (int): the denominator
@@ -111,7 +110,8 @@ def time_humanizer(current_time: datetime, event_time: arrow.Arrow) -> str:
 
 	Args:
 		current_time (datetime): The current time to be judged off of
-		event_time (datetime): The events time to be factored
+		event_time (arrow.Arrow): The events time to be factored
+
 	Returns:
 		str: The humanized time as a string
 	"""
@@ -154,7 +154,7 @@ def format_events(events: list[CalendarInfo]) -> list[dict[str, str]]:
 	Formats a parsed list of CalendarInfos, and returns the HTML required for front end
 
 	Args:
-		events: The list of CalendarInfos to be formatted
+		events: (list[CalendarInfo]) The list of CalendarInfos to be formatted
 
 	Returns:
 		list[dict[str, str]]: Returns a dictionary with the "data" key mapping to a list of dictionarys of each event.
@@ -204,7 +204,7 @@ async def rebuild_calendar() -> None:
 				current_time, current_time + timedelta(days=CALENDAR_OUTLOOK_DAYS)
 			)
 
-			announcement_queue.clear_running_workers()
+			matched_announcement_keys: set[str] = set()
 
 			for event in fetched_daily_events:
 				dt = event.get("DTSTART").dt
@@ -226,8 +226,12 @@ async def rebuild_calendar() -> None:
 					event.get("LOCATION"),
 				)
 
-				announcement_queue.check_for_announcement(event, dt)
+				announcement_key = announcement_queue.check_for_announcement(event, dt)
+				if announcement_key is not None:
+					matched_announcement_keys.add(announcement_key)
 				found_events.add(new_event)
+
+			announcement_queue.clear_stale_workers(matched_announcement_keys)
 
 			cal_last_update = current_time
 			calendar_cache = sorted(found_events, key=lambda x: x.date)[
@@ -257,8 +261,8 @@ async def get_future_events() -> list[CalendarInfo] | None:
 		header_none_match, \
 		cal_constructed_event
 
-	if CALENDAR_URL is None:
-		raise Exception("Calendar URL is None, cant request.")
+	if not CALENDAR_URL:
+		raise Exception("Calendar URL is not configured, cant request.")
 
 	if not cal_constructed_event.is_set():
 		await cal_constructed_event.wait()

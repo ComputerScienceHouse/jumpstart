@@ -1,14 +1,13 @@
 import json
 from logging import Logger, getLogger
 
-import httpx
-from fastapi import APIRouter, Form, Request
+from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
-from config import WATCHED_CHANNELS, LOGGING_LEVEL
+from config import LOGGING_LEVEL
 from core import cshcalendar, slack, wikithoughts
 
-import urllib
+import urllib.parse
 
 logger: Logger = getLogger(__name__)
 logger.setLevel(LOGGING_LEVEL)
@@ -73,7 +72,10 @@ async def slack_events(request: Request) -> JSONResponse:
 		logger.warning(f"Received a Fake Slack Event!: {raw_body}")
 		return JSONResponse({"error": "Invalid signature"}, status_code=403)
 
-	body: dict = json.loads(raw_body)
+	try:
+		body: dict = json.loads(raw_body)
+	except json.JSONDecodeError:
+		return JSONResponse({"error": "Invalid JSON body"}, status_code=400)
 
 	# Challenge from Bot Authentication
 	if request.headers.get("content-type") == "application/json":
@@ -102,7 +104,11 @@ async def message_actions(request: Request) -> JSONResponse:
 		logger.warning(f"Received a Fake Slack Message Action! {raw_body}")
 		return JSONResponse({"error": "Invalid signature"}, status_code=403)
 
-	form_data = urllib.parse.parse_qs(raw_body.decode("utf-8"))
+	try:
+		form_data = urllib.parse.parse_qs(raw_body.decode("utf-8"))
+	except UnicodeDecodeError:
+		return JSONResponse({"error": "Invalid request body"}, status_code=400)
+
 	payload = form_data.get("payload", [None])[0]
 
 	if payload is None:

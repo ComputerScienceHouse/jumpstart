@@ -153,8 +153,6 @@ def test_request_upload_via_dm_success_and_exception(monkeypatch):
 			recorded["text"] = text
 			recorded["blocks"] = blocks
 
-	asyncio.run(slack.request_upload_via_dm("U123", "Announcement!"))
-
 	monkeypatch.setattr(slack, "client", FakeClient())
 
 	asyncio.run(slack.request_upload_via_dm("U123", "Announcement!"))

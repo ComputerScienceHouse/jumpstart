@@ -4,7 +4,6 @@ import os
 from typing import overload
 
 from dotenv import load_dotenv
-from typing import Any
 
 load_dotenv()
 
@@ -70,11 +69,15 @@ WATCHED_CHANNELS: tuple[str, ...] = tuple(
 )
 
 SLACK_DM_TEMPLATE_FILEPATH: str = os.path.join(
-    BASE_DIR, "static", "slack", "dm_request_template.json"
+	BASE_DIR, "static", "slack", "dm_request_template.json"
 )
 SLACK_MEETINGS_KEYWORD: str = _get_env_variable("SLACK_MEETINGS_KEYWORD", "meeting")
-SLACK_NONTECHNICAL_SEMINAR_KEYWORD: str = _get_env_variable("SLACK_NONTECHNICAL_SEMINAR_KEYWORD", "non-technical")
-SLACK_TECHNICAL_SEMINAR_KEYWORD: str = _get_env_variable("SLACK_TECHNICAL_SEMINAR_KEYWORD", "technical")
+SLACK_NONTECHNICAL_SEMINAR_KEYWORD: str = _get_env_variable(
+	"SLACK_NONTECHNICAL_SEMINAR_KEYWORD", "non-technical"
+)
+SLACK_TECHNICAL_SEMINAR_KEYWORD: str = _get_env_variable(
+	"SLACK_TECHNICAL_SEMINAR_KEYWORD", "technical"
+)
 
 SLACK_ALLOW_ANNOUNCEMENTS: bool = (
 	_get_env_variable("SLACK_ALLOW_ANNOUNCEMENTS", "false") == "true"

@@ -17,11 +17,10 @@ from config import (
 	SLACK_MEETINGS_GROUP_ID,
 	SLACK_TEST_GROUP_ID,
 	SLACK_ALLOW_ANNOUNCEMENTS,
-
 	SLACK_TECHNICAL_SEMINAR_KEYWORD,
 	SLACK_NONTECHNICAL_SEMINAR_KEYWORD,
 	SLACK_MEETINGS_KEYWORD,
-	LOGGING_LEVEL
+	LOGGING_LEVEL,
 )
 
 logger: Logger = getLogger(__name__)
@@ -38,6 +37,7 @@ MINUTES_BEFORE_EVENT_PING = 15
 logger.info(SLACK_MEETINGS_KEYWORD)
 logger.info(SLACK_TECHNICAL_SEMINAR_KEYWORD)
 
+
 async def create_announcement_worker(
 	event_uid: str, event_recurrence_id: str, text: str, event_time: datetime
 ) -> None:
@@ -50,6 +50,7 @@ async def create_announcement_worker(
 		text (str): The message to be sent
 		event_time (datetime): The time for the event.
 	"""
+
 	key: str = f"{event_uid}:{event_recurrence_id}"  # we should use redis instead
 
 	logger.info(key)
@@ -96,104 +97,85 @@ def queue_announcement(
 	queued_announcement_id_cache[key] = task
 
 
-def clear_running_workers() -> None:
+def clear_stale_workers(valid_keys: set[str]) -> None:
 	"""
-	Loops through and removes each running worker event. Used for clearing events that have been deleted
+	Cancels and removes any queued workers whose key is not in valid_keys.
+
+	Args:
+		valid_keys (set[str]): The set of event keys that are still valid this rebuild
 	"""
 
-	for event in queued_announcement_id_cache.values():
-		event.cancel()
+	for key in list(queued_announcement_id_cache.keys()):
+		if key not in valid_keys:
+			task = queued_announcement_id_cache.pop(key, None)
+			if task is not None:
+				task.cancel()
 
-	queued_announcement_id_cache.clear()
 
-
-def check_for_announcement(event: dict[str, Any], time: datetime) -> None:
+def check_for_announcement(event: dict[str, Any], time: datetime) -> str | None:
 	"""
 	Checks to see if a worker needs to be created for an event
 
 	Args:
 		event (dict[str, str]): The information for the event
 		time (datetime): The time for the event
+
+	Returns:
+		str | None: The queued announcement's key if one was queued, otherwise None
 	"""
 
 	if not SLACK_ALLOW_ANNOUNCEMENTS:
-		return
+		return None
 
 	description: str = event.get("DESCRIPTION", "")
 	if not description:
-		return
+		return None
 
 	title: str = event.get("SUMMARY", "")
 	if not title:
-		return
+		return None
 
 	uid: str = str(event.get("UID", ""))
 	if not uid:
-		return
+		return None
 
 	recurrence_id = event.get("RECURRENCE-ID", None)
 	if not recurrence_id:
-		return
+		return None
 
 	rec_id: str = recurrence_id.dt.isoformat()
 	loc = event.get("LOCATION", None)
 
 	description = description.lower().strip()
 
-	if SLACK_NONTECHNICAL_SEMINAR_KEYWORD.lower() in description:
-		if loc:
-			queue_announcement(
-				uid,
-				rec_id,
-				f"<!subteam^{SLACK_ACTIVE_GROUP_ID}> <!subteam^{SLACK_FROSH_GROUP_ID}> The Non-Technical Seminar {title} will be happening in the {loc} in {MINUTES_BEFORE_EVENT_PING} minutes!",
-				time,
-			)
-		else:
-			queue_announcement(
-				uid,
-				rec_id,
-				f"<!subteam^{SLACK_ACTIVE_GROUP_ID}> <!subteam^{SLACK_FROSH_GROUP_ID}> The Non-Technical Seminar {title} will be happening in {MINUTES_BEFORE_EVENT_PING} minutes!",
-				time,
-			)
-	elif SLACK_TECHNICAL_SEMINAR_KEYWORD.lower() in description:
-		if loc:
-			queue_announcement(
-				uid,
-				rec_id,
-				f"<!subteam^{SLACK_ACTIVE_GROUP_ID}> <!subteam^{SLACK_FROSH_GROUP_ID}> The Technical Seminar {title} will be happening in the {loc} in {MINUTES_BEFORE_EVENT_PING} minutes!",
-				time,
-			)
-		else:
-			queue_announcement(
-				uid,
-				rec_id,
-				f"<!subteam^{SLACK_ACTIVE_GROUP_ID}> <!subteam^{SLACK_FROSH_GROUP_ID}> The Technical Seminar {title} will be happening in {MINUTES_BEFORE_EVENT_PING} minutes!",
-				time,
-			)
-	elif SLACK_MEETINGS_KEYWORD.lower() in description:
-		if loc:
-			queue_announcement(
-				uid,
-				rec_id,
-				f"<!subteam^{SLACK_MEETINGS_GROUP_ID}> The {title} directorship will be happening in the {loc} in {MINUTES_BEFORE_EVENT_PING} minutes!",
-				time,
-			)
-		else:
-			queue_announcement(
-				uid,
-				rec_id,
-				f"<!subteam^{SLACK_MEETINGS_GROUP_ID}> The {title} directorship will be happening in {MINUTES_BEFORE_EVENT_PING} minutes!",
-				time,
-			)
-	elif "gick" in description:
-		if loc:
-			queue_announcement(
-				uid, rec_id, f"<!subteam^{SLACK_TEST_GROUP_ID}> gick go to the {loc}!", time
-			)
-		else:
-			queue_announcement(
-				uid, rec_id, f"<!subteam^{SLACK_TEST_GROUP_ID}> hi gick!", time
-			)
+	message: str | None = None
+
+	match description:
+		case x if SLACK_NONTECHNICAL_SEMINAR_KEYWORD.lower() in x:
+			message = f"<!subteam^{SLACK_ACTIVE_GROUP_ID}> <!subteam^{SLACK_FROSH_GROUP_ID}> The Non-Technical Seminar {title} will be happening {f'in the {loc} ' if loc else ''}in {MINUTES_BEFORE_EVENT_PING} minutes!"
+
+		case x if SLACK_TECHNICAL_SEMINAR_KEYWORD.lower() in x:
+			message = f"<!subteam^{SLACK_ACTIVE_GROUP_ID}> <!subteam^{SLACK_FROSH_GROUP_ID}> The Technical Seminar {title} will be happening {f'in the {loc} ' if loc else ''}in {MINUTES_BEFORE_EVENT_PING} minutes!"
+
+		case x if SLACK_MEETINGS_KEYWORD.lower() in x:
+			message = f"<!subteam^{SLACK_MEETINGS_GROUP_ID}> The {title} directorship will be happening {f'in the {loc} ' if loc else ''}in {MINUTES_BEFORE_EVENT_PING} minutes!"
+
+		case x if "gick" in x:
+			message = f"<!subteam^{SLACK_TEST_GROUP_ID}> {f'gick go to the {loc}' if loc else 'hi gick'}!"
+
+		case _:
+			return None
+
+	if message is not None:
+		queue_announcement(
+			uid,
+			rec_id,
+			message,
+			time,
+		)
+
+	return f"{uid}:{rec_id}"
+
 
 # if TECHNICAL_SEMINAR_KEYWORD.lower() in description:
 # 	taskmanager.create_background_task(create_announcement_worker(
