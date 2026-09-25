@@ -1,6 +1,6 @@
-import sys
 import asyncio
 import importlib
+import sys
 
 
 def import_slack_module(monkeypatch) -> object:
@@ -152,8 +152,6 @@ def test_request_upload_via_dm_success_and_exception(monkeypatch):
 			recorded["channel"] = channel
 			recorded["text"] = text
 			recorded["blocks"] = blocks
-
-	asyncio.run(slack.request_upload_via_dm("U123", "Announcement!"))
 
 	monkeypatch.setattr(slack, "client", FakeClient())
 

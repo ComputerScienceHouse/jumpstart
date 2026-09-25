@@ -1,11 +1,8 @@
-import re
 import copy
 import json
+import re
 
-from logging import getLogger, Logger
-
-from slack_sdk.web.async_client import AsyncWebClient
-from slack_sdk.web.slack_response import SlackResponse
+from slack_sdk.web.async_client import AsyncWebClient, AsyncSlackResponse
 from slack_sdk.errors import SlackApiError
 from slack_sdk.signature import SignatureVerifier
 
@@ -19,9 +16,11 @@ from config import (
 	CALENDAR_TIMEZONE,
 	WATCHED_CHANNELS,
 	SLACK_SIGNING_SECRET,
+	LOGGING_LEVEL,
 )
 
 from datetime import datetime
+from logging import Logger, getLogger
 from zoneinfo import ZoneInfo
 from fastapi import Request
 
@@ -29,8 +28,10 @@ import asyncio
 import httpx
 
 logger: Logger = getLogger(__name__)
+logger.setLevel(LOGGING_LEVEL)
+
 client: AsyncWebClient | None = None
-event_id_cache: dict[str, str] = {}
+event_id_cache: dict[str, int] = {}
 
 EVENT_CACHE_DEBOUNCE = (
 	60  # Hold event in for one minute? I think its fine genuiflowkirkenuinelowskinly
@@ -108,25 +109,29 @@ async def reset_event_from_cache(event_id: str) -> None:
 	Arguments:
 		event_id (str): The id of the slack event
 	"""
+
 	global event_id_cache
 
 	await asyncio.sleep(EVENT_CACHE_DEBOUNCE)
-	event_id_cache[event_id] = None
+	event_id_cache.pop(event_id, None)
 	return
 
 
-def get_event_retry_amount(event_id: str) -> int:
+def get_event_retry_amount(event_id: str | None) -> int:
 	"""
 	Returns the amount of times a event has been retried
 
 	Arguments:
-		event_id (str): The id of the slack event
+		event_id (str | None): The id of the slack event
 
 	Returns:
 		int: The amount of times the event has been retried
 	"""
 
 	global event_id_cache
+
+	if event_id is None:
+		return 0
 
 	if event_id in event_id_cache:
 		event_id_cache[event_id] += 1
@@ -151,7 +156,7 @@ async def gather_emojis() -> dict:
 		if client is None:
 			raise ValueError("Slack client is not initialized")
 
-		emoji_request: dict = await client.emoji_list()
+		emoji_request: AsyncSlackResponse = await client.emoji_list()
 		assert emoji_request.get("ok", False)
 
 		emojis = emoji_request.get("emoji", {})
@@ -172,7 +177,10 @@ async def get_username(user_id: str) -> str:
 		str: The username, or an empty string if not applicable
 	"""
 
-	response = await client.users_info(user=user_id)
+	if client is None:
+		raise ValueError("Slack client is not initialized")
+
+	response: AsyncSlackResponse = await client.users_info(user=user_id)
 	user = response.get("user", None)
 
 	if user is None:
@@ -199,7 +207,10 @@ async def request_upload_via_dm(user_id: str, announcement_text: str) -> None:
 		if client is None:
 			raise ValueError("Slack client is not initialized")
 
-		message: dict = copy.deepcopy(SLACK_DM_TEMPLATE)
+		message: list | None = copy.deepcopy(SLACK_DM_TEMPLATE)
+
+		if message is None:
+			raise Exception("Unable to deepcopy dm template.")
 
 		message[0]["text"]["text"] += announcement_text
 		message[1]["elements"][0]["value"] = json.dumps(
@@ -219,7 +230,9 @@ async def request_upload_via_dm(user_id: str, announcement_text: str) -> None:
 		logger.error(f"Error messaging user {user_id}: {e}")
 
 
-async def process_slack_events(body: dict) -> dict[str, str]:
+async def process_slack_events(
+	body: dict,
+) -> dict[str, str] | tuple[dict[str, str], int]:
 	"""
 	Processes a slack event, logging and returning the result from the event
 
@@ -238,7 +251,7 @@ async def process_slack_events(body: dict) -> dict[str, str]:
 			logger.info(
 				f"SLACK EVENT: Retried event for {body.get('event_id', None)} {event_amounts} time(s)!"
 			)
-			return ({"status": "success"}, 200)
+			return {"status": "success"}
 
 		event: dict = body.get("event", {})
 
@@ -276,7 +289,7 @@ async def process_slack_message_actions(payload: str):
 			logger.info(
 				f"SLACK MESSAGE ACTION: Retried event for {form_json.get('trigger_id', None)} {event_amounts} time(s)!"
 			)
-			return {"status": "ignored"}
+			return ({"status": "ignored"}, 200)
 
 		if form_json.get("type") != "block_actions":
 			return ({}, 200)
@@ -286,8 +299,8 @@ async def process_slack_message_actions(payload: str):
 				"User approved the announcement, Adding it to the announcement list!"
 			)
 
-			message_object: dict[str, dict] = json.loads(
-				form_json.get("actions", [{}])[0].get("value", '{text:""}')
+			message_object: str | None = json.loads(
+				form_json.get("actions", [{}])[0].get("value", '{"text": ""}')
 			).get("text", None)
 
 			user_id = form_json.get("user", {}).get("id")
@@ -326,8 +339,8 @@ async def send_announcement_message(msg_text: str) -> None:
 
 	Args:
 		msg_text (str): The text for the message
-
 	"""
+
 	if not client:
 		logger.warning("Client has not been initalized")
 		return
@@ -369,7 +382,7 @@ def get_announcement() -> dict[str, str] | None:
 	return current_announcement
 
 
-def add_announcement(announcement_text: str, username: str) -> None:
+def add_announcement(announcement_text: str | None, username: str) -> None:
 	"""
 	Adds an announcement to the queue.
 
@@ -377,6 +390,7 @@ def add_announcement(announcement_text: str, username: str) -> None:
 		announcement_text (str): The text of the announcement to be added.
 		user_id (str): The user_id of the person
 	"""
+
 	global current_announcement
 
 	if announcement_text is None or announcement_text.strip() == "":

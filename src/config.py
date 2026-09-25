@@ -1,15 +1,24 @@
-import os
 import json
 import logging
+import os
+from typing import overload
+
 from dotenv import load_dotenv
-from typing import Any
 
 load_dotenv()
 
 logger: logging.Logger = logging.getLogger(__name__)
 
 
-def _get_env_variable(name: str, default: str | None = None) -> str | Any:
+@overload
+def _get_env_variable(name: str, default: None = None) -> str | None: ...
+
+
+@overload
+def _get_env_variable(name: str, default: str) -> str: ...
+
+
+def _get_env_variable(name: str, default: str | None = None) -> str | None:
 	"""
 	Retrieves an environment variable, with an optional default value.
 
@@ -38,9 +47,37 @@ def _get_env_variable(name: str, default: str | None = None) -> str | Any:
 
 BASE_DIR: str = os.path.dirname(os.path.abspath(__file__))
 
+_raw_logging_level: str = _get_env_variable("LOGGING_LEVEL", "DEBUG")
+LOGGING_LEVEL: int = logging.INFO
+
+match _raw_logging_level:
+	case "DEBUG":
+		LOGGING_LEVEL = logging.DEBUG
+	case "WARN":
+		LOGGING_LEVEL = logging.WARN
+	case "ERROR":
+		LOGGING_LEVEL = logging.ERROR
+	case "FATAL":
+		LOGGING_LEVEL = logging.FATAL
+	case "CRITICAL":
+		LOGGING_LEVEL = logging.CRITICAL
+
+SLACK_API_TOKEN: str | None = _get_env_variable("SLACK_API_TOKEN", None)
+SLACK_JUMPSTART_MESSAGE: str = "Would you like to post this message to Jumpstart?"
+WATCHED_CHANNELS: tuple[str, ...] = tuple(
+	_get_env_variable("WATCHED_CHANNELS", "0,1,2").split(",")
+)
+
+SLACK_DM_TEMPLATE_FILEPATH: str = os.path.join(
+	BASE_DIR, "static", "slack", "dm_request_template.json"
+)
 SLACK_MEETINGS_KEYWORD: str = _get_env_variable("SLACK_MEETINGS_KEYWORD", "meeting")
-SLACK_NONTECHNICAL_SEMINAR_KEYWORD: str = _get_env_variable("SLACK_NONTECHNICAL_SEMINAR_KEYWORD", "non-technical")
-SLACK_TECHNICAL_SEMINAR_KEYWORD: str = _get_env_variable("SLACK_TECHNICAL_SEMINAR_KEYWORD", "technical")
+SLACK_NONTECHNICAL_SEMINAR_KEYWORD: str = _get_env_variable(
+	"SLACK_NONTECHNICAL_SEMINAR_KEYWORD", "non-technical"
+)
+SLACK_TECHNICAL_SEMINAR_KEYWORD: str = _get_env_variable(
+	"SLACK_TECHNICAL_SEMINAR_KEYWORD", "technical"
+)
 
 SLACK_ALLOW_ANNOUNCEMENTS: bool = (
 	_get_env_variable("SLACK_ALLOW_ANNOUNCEMENTS", "false") == "true"
@@ -51,14 +88,9 @@ SLACK_MEETINGS_GROUP_ID: str = _get_env_variable("SLACK_MEETINGS_GROUP_ID", "")
 SLACK_FROSH_GROUP_ID: str = _get_env_variable("SLACK_FROSH_GROUP_ID", "")
 SLACK_TEST_GROUP_ID: str = _get_env_variable("SLACK_TEST_GROUP_ID", "")
 
-SLACK_API_TOKEN: str = _get_env_variable("SLACK_API_TOKEN", "")
-SLACK_JUMPSTART_MESSAGE: str = "Would you like to post this message to Jumpstart?"
-SLACK_SIGNING_SECRET: str = _get_env_variable("SLACK_SIGNING_SECRET", None)
+SLACK_SIGNING_SECRET: str | None = _get_env_variable("SLACK_SIGNING_SECRET", None)
 
-WATCHED_CHANNELS: tuple[str] = tuple(
-	_get_env_variable("WATCHED_CHANNELS", "0,1,2").split(",")
-)
-SLACK_DM_TEMPLATE: dict | None = None
+SLACK_DM_TEMPLATE: list | None = None
 
 CALENDAR_URL: str = _get_env_variable("CALENDAR_URL", "")
 CALENDAR_OUTLOOK_DAYS: int = int(_get_env_variable("CALENDAR_OUTLOOK_DAYS", "7"))
@@ -67,9 +99,10 @@ CALENDAR_TIMEZONE: str = _get_env_variable("CALENDAR_TIMEZONE", "America/New_Yor
 CALENDAR_CACHE_REFRESH: int = int(_get_env_variable("CALENDAR_CACHE_REFRESH", "10"))
 
 WIKI_API: str | None = _get_env_variable("WIKI_API", None)
-WIKIBOT_USER: str | None = _get_env_variable("WIKIBOT_USER", None)
-WIKIBOT_PASSWORD: str | None = _get_env_variable("WIKIBOT_PASSWORD", None)
+WIKIBOT_USER: str = _get_env_variable("WIKIBOT_USER", "")
+WIKIBOT_PASSWORD: str = _get_env_variable("WIKIBOT_PASSWORD", "")
 WIKI_CATEGORY: str = _get_env_variable("WIKI_CATEGORY", "JobAdvice")
 
-with open(os.path.join(BASE_DIR, "static", "slack", "dm_request_template.json")) as f:
-	SLACK_DM_TEMPLATE = json.load(f)
+if os.path.exists(SLACK_DM_TEMPLATE_FILEPATH):
+	with open(SLACK_DM_TEMPLATE_FILEPATH, mode="r") as f:
+		SLACK_DM_TEMPLATE = json.load(f)

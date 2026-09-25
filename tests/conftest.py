@@ -1,5 +1,6 @@
-import coverage
 import os
+
+import coverage
 
 # Get the absolute path to the src directory
 src_path = os.path.join(os.path.dirname((os.path.abspath(__file__))), "..", "src")

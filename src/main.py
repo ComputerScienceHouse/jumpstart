@@ -6,22 +6,21 @@ V1 Authors: Beckett Jenen
 """
 
 import os
-
-from logging import getLogger, Logger
+from contextlib import asynccontextmanager
+from logging import Logger, getLogger
 
 from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import RedirectResponse, HTMLResponse
-from contextlib import asynccontextmanager
-
-from config import BASE_DIR
 
 from api import endpoints
-from core import wikithoughts, cshcalendar
+from config import BASE_DIR, LOGGING_LEVEL
+from core import cshcalendar, wikithoughts
 from modules import taskmanager
 
 logger: Logger = getLogger(__name__)
+logger.setLevel(LOGGING_LEVEL)
 
 
 @asynccontextmanager

@@ -1,5 +1,7 @@
-from logging import getLogger, Logger
-from datetime import datetime, date, timedelta, time
+import asyncio
+import re
+from datetime import date, datetime, time, timedelta
+from logging import Logger, getLogger
 from zoneinfo import ZoneInfo
 
 from core import announcement_queue
@@ -8,8 +10,6 @@ from icalendar.cal import Event, Calendar
 import httpx
 import recurring_ical_events
 import arrow
-import re
-import asyncio
 
 from modules import taskmanager
 
@@ -19,6 +19,7 @@ from config import (
 	CALENDAR_OUTLOOK_DAYS,
 	CALENDAR_TIMEZONE,
 	CALENDAR_URL,
+	LOGGING_LEVEL,
 )
 
 calendar_cache: list[CalendarInfo] = []  # The current cache of the calendar
@@ -35,6 +36,8 @@ cal_constructed_event: asyncio.Event = asyncio.Event()
 cal_constructed_event.clear()
 
 logger: Logger = getLogger(__name__)
+logger.setLevel(LOGGING_LEVEL)
+
 logger.info("Starting up the calendar service!")
 
 cshcal_client = httpx.AsyncClient()
@@ -50,7 +53,7 @@ This is used for each "check" from the time humanizer. %TIME% will be replaced w
 WARNING: PERCENTAGE SIGNS WILL TRIGGER A REGEX OPERATION
 WARNING: FOLLOW INSERTION ORDER
 """
-HUMANIZER_CHECKS: dict[int, str] = {
+HUMANIZER_CHECKS: dict[int | float, str] = {
 	MINUTE: "In 1 Minute",
 	(HOUR - MINUTE): f"In %{MINUTE}% Minutes",
 	(HOUR * 1.5): "In 1 Hour",
@@ -74,7 +77,7 @@ class CalendarInfo:
 
 	def __init__(self, name: str, date_time: date, location: str | None = None):
 		self.name: str = name
-		self.date: arrow.arrow = arrow.get(date_time)  # Arrow has way cooler stuff
+		self.date: arrow.Arrow = arrow.get(date_time)  # Arrow has way cooler stuff
 		self.location: str | None = location
 
 	def __eq__(self, other):
@@ -89,6 +92,7 @@ class CalendarInfo:
 def ceil_division(num: int, den: int) -> int:
 	"""
 	Returns a ceiling division of the two numbers
+
 	Args:
 		num (int): the numerator
 		den (int): the denominator
@@ -100,13 +104,14 @@ def ceil_division(num: int, den: int) -> int:
 	return (num + den - 1) // den
 
 
-def time_humanizer(current_time: datetime, event_time: datetime) -> str:
+def time_humanizer(current_time: datetime, event_time: arrow.Arrow) -> str:
 	"""
 	Custom humanizer for text to be displayed
 
 	Args:
 		current_time (datetime): The current time to be judged off of
-		event_time (datetime): The events time to be factored
+		event_time (arrow.Arrow): The events time to be factored
+
 	Returns:
 		str: The humanized time as a string
 	"""
@@ -125,7 +130,7 @@ def time_humanizer(current_time: datetime, event_time: datetime) -> str:
 		num = int(match.group(1))
 		return str(round(time_before_event / num))
 
-	time_before_event: int = (event_time - current_time).total_seconds()
+	time_before_event: int | float = (event_time - current_time).total_seconds()
 
 	if time_before_event > WEEK:
 		return "Over a Week Away"
@@ -149,7 +154,7 @@ def format_events(events: list[CalendarInfo]) -> list[dict[str, str]]:
 	Formats a parsed list of CalendarInfos, and returns the HTML required for front end
 
 	Args:
-		events: The list of CalendarInfos to be formatted
+		events: (list[CalendarInfo]) The list of CalendarInfos to be formatted
 
 	Returns:
 		list[dict[str, str]]: Returns a dictionary with the "data" key mapping to a list of dictionarys of each event.
@@ -163,20 +168,16 @@ def format_events(events: list[CalendarInfo]) -> list[dict[str, str]]:
 	formatted_list: list[dict[str, str]] = []
 
 	for event in events:
-		content_dict: dict[str, str] = {}
+		content_dict: dict[str, str] = {"content": str(event.name)}
 
-		event_cur_happening: bool = event.date < current_date
-		if event_cur_happening:
-			formatted: str = (
+		if event.date < current_date:
+			content_dict["header"] = (
 				f"Happening in {event.location}!"
 				if event.location
 				else "Happening Now!"
 			)
-			content_dict["header"] = formatted
-			content_dict["content"] = str(event.name)
 		else:
 			content_dict["header"] = time_humanizer(current_date, event.date)
-			content_dict["content"] = str(event.name)
 
 		formatted_list.append(content_dict)
 	return formatted_list
@@ -203,7 +204,7 @@ async def rebuild_calendar() -> None:
 				current_time, current_time + timedelta(days=CALENDAR_OUTLOOK_DAYS)
 			)
 
-			announcement_queue.clear_running_workers()
+			matched_announcement_keys: set[str] = set()
 
 			for event in fetched_daily_events:
 				dt = event.get("DTSTART").dt
@@ -225,8 +226,12 @@ async def rebuild_calendar() -> None:
 					event.get("LOCATION"),
 				)
 
-				announcement_queue.check_for_announcement(event, dt)
+				announcement_key = announcement_queue.check_for_announcement(event, dt)
+				if announcement_key is not None:
+					matched_announcement_keys.add(announcement_key)
 				found_events.add(new_event)
+
+			announcement_queue.clear_stale_workers(matched_announcement_keys)
 
 			cal_last_update = current_time
 			calendar_cache = sorted(found_events, key=lambda x: x.date)[
@@ -240,7 +245,7 @@ async def rebuild_calendar() -> None:
 			cal_constructed_event.set()
 
 
-async def get_future_events() -> list[CalendarInfo]:
+async def get_future_events() -> list[CalendarInfo] | None:
 	"""
 	Returns the first events up to event maximum within the the calendar outlook day amount
 	custom object has name, date and the location
@@ -255,6 +260,9 @@ async def get_future_events() -> list[CalendarInfo]:
 		header_last_modified, \
 		header_none_match, \
 		cal_constructed_event
+
+	if not CALENDAR_URL:
+		raise Exception("Calendar URL is not configured, cant request.")
 
 	if not cal_constructed_event.is_set():
 		await cal_constructed_event.wait()
@@ -273,10 +281,11 @@ async def get_future_events() -> list[CalendarInfo]:
 
 	logger.info("Checking to rebuild CSH Calendar...")
 	try:
-		headers: dict[str, str | None] = {}
+		headers: dict[str, str] = {}
 
 		if header_none_match:
 			headers["If-None-Match"] = header_none_match
+
 		if header_last_modified:
 			headers["If-Modified-Since"] = header_last_modified
 
