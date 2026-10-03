@@ -1,9 +1,10 @@
 import asyncio
 import importlib
 import sys
+from types import ModuleType
 
 
-def import_slack_module(monkeypatch) -> object:
+def import_slack_module(monkeypatch) -> ModuleType:
 	"""
 	Helper function to import the slack module after setting the SLACK_API_TOKEN environment variable.
 
@@ -11,7 +12,7 @@ def import_slack_module(monkeypatch) -> object:
 	    monkeypatch: The pytest monkeypatch fixture.
 
 	Returns:
-	    object: The imported config module.
+	    ModuleType: The imported slack module.
 	"""
 
 	monkeypatch.setenv("SLACK_API_TOKEN", "test-token")
@@ -181,7 +182,7 @@ def test_get_and_add_announcement(monkeypatch):
 
 	slack = import_slack_module(monkeypatch)
 
-	slack.current_announcement = None
+	monkeypatch.setattr(slack, "current_announcement", None)
 	assert slack.current_announcement is None
 
 	skip_announcements: list[str | None] = [None, "", "   "]

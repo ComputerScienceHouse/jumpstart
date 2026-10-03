@@ -136,7 +136,7 @@ async function longUpdate() {
         themeToLoad = "light";
         bgImage = "url(../static/img/lightmodeF.png)";
     }
-    $("body").css("background-image", bgImage);
+    document.body.style.backgroundImage = bgImage;
 
     try {
         setNewPageTheme(allThemes[themeToLoad].page);
@@ -159,11 +159,11 @@ async function mediumUpdate() {
         ]);
         const wikiData = await wikiRes.json();
         const announcementData = await announcementRes.json();
-        $("#wikipageheader").text("csh/Wikithoughts - "  + wikiData.page)
-        $("#wikipagetext").text(wikiData.content);
-        $("#announcement").text(announcementData.content.substring(0, 910));
-        $("#announcement-stamp").text(announcementData.user + " - " + announcementData.timestamp)
-        /*$("#announcement-header").text("Announcements\n" + announcementData.user)*/
+        document.getElementById("wikipageheader").textContent = "csh/Wikithoughts - "  + wikiData.page;
+        document.getElementById("wikipagetext").textContent = wikiData.content;
+        document.getElementById("announcement").textContent = announcementData.content.substring(0, 910);
+        document.getElementById("announcement-stamp").textContent = announcementData.user + " - " + announcementData.timestamp;
+        /*document.getElementById("announcement-header").textContent = "Announcements\n" + announcementData.user;*/
     } catch (err) {
         console.log(err);
     }

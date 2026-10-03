@@ -1,9 +1,18 @@
 [project]
 name = "jumpstart"
-version = "0.1.0"
+version = "0.1.1"
 description = "A graphical interface that displays information in the elevator lobby of Computer Science House."
 readme = "README.md"
 requires-python = ">=3.14"
+authors = [
+    { name = "Eli Mares" },
+    { name = "Nikolai Strong" },
+    { name = "Will Hellinger" },
+]
+maintainers = [
+    { name = "Webmaster", email = "webmaster@csh.rit.edu" },
+]
+
 dependencies = [
     "aiohttp==3.13.3",
     "arrow==1.4.0",
@@ -40,3 +49,25 @@ tests = [
     "coverage==7.13.4",
     "pytest==9.0.2",
 ]
+
+[tool.ruff]
+exclude = [
+    "__pycache__",
+    ".container_volumes",
+    ".venv",
+]
+target-version = "py314"
+line-length = 88
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "tab"
+skip-magic-trailing-comma = false
+
+[tool.ty.environment]
+extra-paths = ["./src"]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+python_files = ["test_*.py"]
+pythonpath = ["src"]

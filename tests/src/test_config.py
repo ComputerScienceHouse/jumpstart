@@ -1,13 +1,14 @@
 import importlib
 import sys
+from types import ModuleType
 
 
-def import_config_module() -> object:
+def import_config_module() -> ModuleType:
 	"""
 	Helper function to import the config module after modifying environment variables.
 
 	Returns:
-		object: The imported config module.
+		ModuleType: The imported config module.
 	"""
 
 	if "config" in sys.modules:

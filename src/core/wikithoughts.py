@@ -52,7 +52,9 @@ page_last_updated: datetime | None = None
 
 
 # Precompile all the Regex operations
-RE_LINK: Pattern[str] = re.compile(r'\[https?://[^\s"]+\s+"?([^\]"]+)"?\]')
+RE_LINK: Pattern[str] = re.compile(
+	r'\[https?://[^\s"\[\]]+\s+"?([^\s"\[\]][^"\[\]]*)"?\]'
+)
 RE_FILE: Pattern[str] = re.compile(r"\[\[File:[^\]]*\]\]", re.IGNORECASE)
 RE_IMAGE: Pattern[str] = re.compile(r"\[\[Image:[^\]]*\]\]", re.IGNORECASE)
 RE_PAGE_TEXT: Pattern[str] = re.compile(r"\[\[[^\|\]]*\|([^\]]+)\]\]")
