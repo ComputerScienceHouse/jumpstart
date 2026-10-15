@@ -78,6 +78,9 @@ SLACK_NONTECHNICAL_SEMINAR_KEYWORD: str = _get_env_variable(
 SLACK_TECHNICAL_SEMINAR_KEYWORD: str = _get_env_variable(
 	"SLACK_TECHNICAL_SEMINAR_KEYWORD", "technical"
 )
+SLACK_ADHOC_KEYWORD: str = _get_env_variable(
+	"SLACK_ADHOC_KEYWORD", "adhoc"
+)
 
 SLACK_ALLOW_ANNOUNCEMENTS: bool = (
 	_get_env_variable("SLACK_ALLOW_ANNOUNCEMENTS", "false") == "true"

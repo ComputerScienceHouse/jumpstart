@@ -20,6 +20,7 @@ from config import (
 	SLACK_TECHNICAL_SEMINAR_KEYWORD,
 	SLACK_NONTECHNICAL_SEMINAR_KEYWORD,
 	SLACK_MEETINGS_KEYWORD,
+	SLACK_ADHOC_KEYWORD,
 	LOGGING_LEVEL,
 )
 
@@ -53,7 +54,6 @@ async def create_announcement_worker(
 
 	key: str = f"{event_uid}:{event_recurrence_id}"  # we should use redis instead
 
-	logger.info(key)
 	current_time: datetime = datetime.now(ZoneInfo(CALENDAR_TIMEZONE))
 	if current_time < (event_time - timedelta(minutes=MINUTES_BEFORE_EVENT_PING)):
 		wait_time = (
@@ -159,6 +159,9 @@ def check_for_announcement(event: dict[str, Any], time: datetime) -> str | None:
 
 		case x if SLACK_MEETINGS_KEYWORD.lower() in x:
 			message = f"<!subteam^{SLACK_MEETINGS_GROUP_ID}> The {title} directorship will be happening {f'in the {loc} ' if loc else ''}in {MINUTES_BEFORE_EVENT_PING} minutes!"
+
+		case x if SLACK_ADHOC_KEYWORD.lower() in x:
+			message = f"<!subteam^{SLACK_MEETINGS_GROUP_ID}> The {title} adhoc will be happening {f'in the {loc} ' if loc else ''}in {MINUTES_BEFORE_EVENT_PING} minutes!"
 
 		case x if "gick" in x:
 			message = f"<!subteam^{SLACK_TEST_GROUP_ID}> {f'gick go to the {loc}' if loc else 'hi gick'}!"
