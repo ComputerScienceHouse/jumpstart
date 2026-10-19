@@ -155,7 +155,7 @@ def check_for_announcement(event: dict[str, Any], time: datetime) -> str | None:
 		is_cancelled = True
 
 	match description:
-		case is_cancelled:
+		case x if is_cancelled:
 			message = f"The {title} event has been canceled :bangbang:"
 
 		case x if SLACK_NONTECHNICAL_SEMINAR_KEYWORD.lower() in x:
