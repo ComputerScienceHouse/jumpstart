@@ -151,7 +151,7 @@ def check_for_announcement(event: dict[str, Any], time: datetime) -> str | None:
 	message: str | None = None
 
 	is_cancelled = False
-	if "[CANCELLED]" in title:
+	if ("[CANCELLED]" in title) or ("[CANCELED]" in title):
 		is_cancelled = True
 
 	match description:
